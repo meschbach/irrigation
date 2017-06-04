@@ -1,0 +1,7 @@
+{
+	"name" : "test-service",
+	"description" : "Provides resources for test assertions",
+	"dependencies" :  {
+		"express" : "4.15.3"
+	}
+}
