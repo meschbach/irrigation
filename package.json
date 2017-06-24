@@ -1,5 +1,8 @@
 {
 	"name" : "delta",
+	"scripts" : {
+		"test": "mocha"
+	},
 	"devDependencies" : {
 		"body-parser" : "1.17.2",
 		"chai" : "3.5.0",
