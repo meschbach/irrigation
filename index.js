@@ -12,22 +12,13 @@ let request = require( 'request' )
 let defer = require( './defer' )
 let DeltaClient = require( './client' )
 let promise_post_json_request = require( './promise-requests' ).post_json
+let ExpressControlInterface = require( './control-http' ).ExpressControlInterface
 
 function promise_get_request( url ) {
 	return defer( ( resolve, reject ) => {
 		request( url, (err, resp, body) => {
 			if( err ){ return reject( err ) }
 			resolve( { headers: resp, body } )
-		})
-	})
-}
-
-
-function express_promise_listen_url( app, port ){
-	return defer( ( resolve, reject ) => {
-		let listener = app.listen( port, () => {
-			let url = "http://localhost:" + listener.address().port
-			resolve( url )
 		})
 	})
 }
@@ -100,18 +91,8 @@ class Delta {
 	 * Boots up the default ingress listener and attaches a handler for hearing control messages
 	 */
 	start() {
-		this.control = express()
-		this.control.use( morgan( 'short' ) )
-		this.control.use( bodyParser.json() )
-		this.control.post( '/v1/target/:name', ( req, resp ) => {
-			this.targets[ req.params.name ] = new DeltaTarget( req.body.port )
-			resp.statusCode = 201
-			resp.end()
-		})
-
-		let promise = express_promise_listen_url( this.control, 0 )
-		promise.then( (port) => { console.log("Delta running on port " + port) } ).done()
-		return promise
+		let controller = new ExpressControlInterface( this )
+		return controller.start()
 	}
 
 	ingress( port ) {
@@ -123,6 +104,10 @@ class Delta {
 		var ingress = new DeltaIngress( whenListening, this )
 		this.intake.push( ingress )
 		return ingress
+	}
+
+	register_target( name, port ){
+			this.targets[ name ] = new DeltaTarget( port )
 	}
 
 	/*
