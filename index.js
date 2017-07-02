@@ -65,12 +65,16 @@ class HandRolledProxier {
  * Responsible for delegating a proxy request the correct proxy handler
  */
 class DeltaIngress {
-	constructor( listening, mesh ){
+	/*
+	 * @param mesh locates the best target to utilize
+	 */
+	constructor( listening, mesh, wire_proxy ){
 		if( !listening ){ throw new Error("listening required") }
 		if( !mesh ){ throw new Error("mesh required") }
 		this.listening = listening
 		this.targets = []
 		this.mesh = mesh
+		this.wire_proxy = wire_proxy
 	}
 
 	target( name ) {
@@ -84,8 +88,7 @@ class DeltaIngress {
 		} else {
 			console.log( "Finding targets", this.targets, request.url )
 			let target = this.mesh.find_target( this.targets )
-			let proxier = new HandRolledProxier()
-			proxier.proxy( target, request, response )
+			this.wire_proxy.proxy( target, request, response )
 		}
 	}
 }
@@ -126,7 +129,8 @@ class Delta {
 			ingress.requested( request, response )
 		})
 		let whenListening = http_promise_listen_url( server, 0 )
-		var ingress = new DeltaIngress( whenListening, this )
+		let wire_proxy = new HandRolledProxier()
+		var ingress = new DeltaIngress( whenListening, this, wire_proxy )
 		this.intake.push( ingress )
 		return ingress
 	}
