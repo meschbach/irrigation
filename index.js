@@ -8,23 +8,10 @@ let morgan = require( 'morgan' )
 let q = require( 'q' )
 let request = require( 'request' )
 
-function defer( what ) {
-		let defer = q.defer()
-		try {
-			let resolve = ( value ) => {
-				defer.resolve( value )
-			}
-
-			let reject = ( value ) => {
-				defer.reject( value )
-			}
-
-			what( resolve, reject )
-		}catch( error ){
-			defer.reject( error )
-		}
-		return defer.promise
-}
+// Internal dependencies
+let defer = require( './defer' )
+let DeltaClient = require( './client' )
+let promise_post_json_request = require( './promise-requests' ).post_json
 
 function promise_get_request( url ) {
 	return defer( ( resolve, reject ) => {
@@ -35,18 +22,6 @@ function promise_get_request( url ) {
 	})
 }
 
-function promise_post_json_request( url, body ) {
-	return defer( ( resolve, reject ) => {
-		request({
-			method: 'POST',
-			uri: url,
-			json: body
-		}, (error, resp, body ) => {
-			if( error ) { return reject( error ) }
-			resolve( { headers: resp, body } )
-		})
-	})
-}
 
 function express_promise_listen_url( app, port ){
 	return defer( ( resolve, reject ) => {
@@ -64,23 +39,6 @@ function http_promise_listen_url( service, port ){
 			resolve( url )
 		})
 	})
-}
-
-class DeltaClient {
-	constructor( controlURL ) {
-		this.url = controlURL
-	}
-
-	register( service_name , port ) {
-		if( !service_name ){ throw new Error("Expected service_name, is falsy") }
-		if( !port && port != 0 ){ throw new Error("Expected port, got falsy") }
-
-		return promise_post_json_request( this.url + "/v1/target/" + service_name, { port: port } )
-			.then( ( result ) => {
-				if( result.headers.statusCode != 201 ){ throw new Error( result.headers.statusCode + " != 201" ) }
-				return true
-			})
-	}
 }
 
 class DeltaIngress {
