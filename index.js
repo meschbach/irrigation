@@ -33,6 +33,17 @@ function http_promise_listen_url( service, port ){
 }
 
 /*
+ * Produces intsnaces of the hand rolled proxier
+ */
+class HandRolledProxierProducer {
+	constructor(){ }
+
+	produce( details ) {
+		return  new HandRolledProxier()
+	}
+}
+
+/*
  * Attempt to write a proxier myself.
  */
 class HandRolledProxier {
@@ -110,6 +121,9 @@ class Delta {
 	constructor() {
 		this.intake = []
 		this.targets = {}
+
+		this.wire_proxy_factories = {}
+		this.wire_proxy_factories[ 'hand' ] = new HandRolledProxierProducer()
 	}
 
 	/**
@@ -123,13 +137,15 @@ class Delta {
 	/*
 	 * Establish a service to handle incoming requests
 	 */
-	ingress( port ) {
+	ingress( port, wire_proxy_name ) {
 		let server = new http.Server( ( request, response ) => {
 			console.log("Accepted request")
 			ingress.requested( request, response )
 		})
 		let whenListening = http_promise_listen_url( server, 0 )
-		let wire_proxy = new HandRolledProxier()
+
+		let wire_factory = this.wire_proxy_factories[ wire_proxy_name || "hand" ]
+		let wire_proxy = wire_factory.produce( {} )
 		var ingress = new DeltaIngress( whenListening, this, wire_proxy )
 		this.intake.push( ingress )
 		return ingress
