@@ -47,8 +47,7 @@ class HandRolledProxierProducer {
  * Attempt to write a proxier myself.
  */
 class HandRolledProxier {
-	constructor(){
-	}
+	constructor(){ }
 
 	proxy( target, request, response ){
 			let agent = new http.Agent({ keepAlive: false })
@@ -115,6 +114,31 @@ class DeltaTarget {
 }
 
 /*
+ * Node HTTP Proxy
+ */
+class NHPFactory {
+	constructor( nhp ){
+		if( !nhp ){ throw new Error( "node-http-proxy must be defined." ); }
+		this.nhp = nhp
+	}
+
+	produce( details ){
+		let proxy = this.nhp.createProxyServer( {} )
+		return new NHPWireProxy( proxy )
+	}
+}
+
+class NHPWireProxy {
+	constructor( proxy ){
+		this.wire = proxy
+	}
+
+	proxy( target, request, response ){
+		this.wire.web( request, response, { target: "http://localhost:" + target.port } )
+	}
+}
+
+/*
  * Top level proxy system state manager
  */
 class Delta {
@@ -124,6 +148,12 @@ class Delta {
 
 		this.wire_proxy_factories = {}
 		this.wire_proxy_factories[ 'hand' ] = new HandRolledProxierProducer()
+		try {
+			let httpProxy = require( 'http-proxy' )
+			this.wire_proxy_factories[ 'node-http-proxy' ] = new NHPFactory( httpProxy )
+		} catch( e ) {
+			console.log( "Not registering http-proxy wire factory because not found" )
+		}
 	}
 
 	/**
@@ -145,6 +175,8 @@ class Delta {
 		let whenListening = http_promise_listen_url( server, 0 )
 
 		let wire_factory = this.wire_proxy_factories[ wire_proxy_name || "hand" ]
+		if( !wire_factory ){ throw new Error( "No such wire proxy registered: " + wire_proxy_name ); }
+
 		let wire_proxy = wire_factory.produce( {} )
 		var ingress = new DeltaIngress( whenListening, this, wire_proxy )
 		this.intake.push( ingress )

@@ -46,6 +46,10 @@ class SimpleTestService {
 }
 
 class SingleProxyHarness {
+	constructor( wire_proxy_name ){
+		this.wire_proxy_name = wire_proxy_name || "hand"
+	}
+
 	setup(){
 		let controlPlane = this.controlPlane = new delta.Delta()
 		let test = this.test = new SimpleTestService()
@@ -60,7 +64,7 @@ class SingleProxyHarness {
 				return test.register( deltaPort, "test-1" )
 			})
 			.then( () => {
-				let ingress = controlPlane.ingress( 0 )
+				let ingress = controlPlane.ingress( 0, this.wire_proxy_name )
 				ingress.target( 'test-1' )
 				return ingress.listening
 			})
@@ -72,58 +76,59 @@ class SingleProxyHarness {
 	}
 }
 
-describe( "Proxying a single system", function() {
-	before( function() {
-		this.harness = new SingleProxyHarness()
-		this.started = this.harness.setup()
-		return this.started
-	})
-	after( function() { this.harness.stop() })
+[ 'hand', 'node-http-proxy' ].forEach( ( proxy_type ) => {
+	describe( "Proxying a single system with " + proxy_type, function() {
+		before( function() {
+			this.harness = new SingleProxyHarness( proxy_type )
+			this.started = this.harness.setup()
+			return this.started
+		})
+		after( function() { this.harness.stop() })
 
-	describe( "For a GET 200 OK resource", function(){
-		before( function(){
-			let response_promise = this.started.then( ( ingressURL ) => {
-				console.log( "Requesting ", ingressURL )
-				let uri = ingressURL + "/proxy-test/received"
-				return promise_get_request( uri )
+		describe( "For a GET 200 OK resource", function(){
+			before( function(){
+				let response_promise = this.started.then( ( ingressURL ) => {
+					console.log( "Requesting ", ingressURL )
+					let uri = ingressURL + "/proxy-test/received"
+					return promise_get_request( uri )
+				})
+
+				this.response = response_promise
+				this.headers = response_promise.then( ( result ) => { return result.headers } )
+				this.body = response_promise.then( ( result ) => { return JSON.parse( result.body ) })
+				return response_promise
 			})
 
-			this.response = response_promise
-			this.headers = response_promise.then( ( result ) => { return result.headers } )
-			this.body = response_promise.then( ( result ) => { return JSON.parse( result.body ) })
-			return response_promise
-		})
-
-		it( "returns expected response entity", function() {
-			return expect( this.body ).to.eventually.deep.equal( { passed: true } )
-		})
-
-		it( "returns correct response code", function() {
-			return expect( this.headers.then( (r) => { return r.statusCode } ) ).to.eventually.deep.equal( 200 )
-		})
-	})
-
-	describe( "For a POST 200 OK resource", function(){
-		before( function(){
-			let response_promise = this.started.then( ( ingressURL ) => {
-				console.log( "Requesting ", ingressURL )
-				let url = ingressURL + "/proxy-test/post-test"
-				let body = { "shooting stars" : "moon" }
-				return promise_post_json_request( url, body )
+			it( "returns expected response entity", function() {
+				return expect( this.body ).to.eventually.deep.equal( { passed: true } )
 			})
-			this.response = response_promise
-			this.headers = response_promise.then( ( result ) => { return result.headers } )
-			this.body = response_promise.then( ( result ) => { return result.body })
-			return response_promise
+
+			it( "returns correct response code", function() {
+				return expect( this.headers.then( (r) => { return r.statusCode } ) ).to.eventually.deep.equal( 200 )
+			})
 		})
 
-		it( "returns expected response entity", function() {
-			return expect( this.body ).to.eventually.deep.equal( { passed: true } )
-		})
+		describe( "For a POST 200 OK resource", function(){
+			before( function(){
+				let response_promise = this.started.then( ( ingressURL ) => {
+					console.log( "Requesting ", ingressURL )
+					let url = ingressURL + "/proxy-test/post-test"
+					let body = { "shooting stars" : "moon" }
+					return promise_post_json_request( url, body )
+				})
+				this.response = response_promise
+				this.headers = response_promise.then( ( result ) => { return result.headers } )
+				this.body = response_promise.then( ( result ) => { return result.body })
+				return response_promise
+			})
 
-		it( "returns correct response code", function() {
-			return expect( this.headers.then( (r) => { return r.statusCode } ) ).to.become( 200 )
+			it( "returns expected response entity", function() {
+				return expect( this.body ).to.eventually.deep.equal( { passed: true } )
+			})
+
+			it( "returns correct response code", function() {
+				return expect( this.headers.then( (r) => { return r.statusCode } ) ).to.become( 200 )
+			})
 		})
 	})
 })
-
