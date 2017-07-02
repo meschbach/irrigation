@@ -33,7 +33,36 @@ function http_promise_listen_url( service, port ){
 }
 
 /*
- * Responsible for delegating a proxy request to the correct library
+ * Attempt to write a proxier myself.
+ */
+class HandRolledProxier {
+	constructor(){
+	}
+
+	proxy( target, request, response ){
+			let agent = new http.Agent({ keepAlive: false })
+			console.log( "Requesting ", target, request.method, request.url )
+			let req = http.request({
+				host: 'localhost',
+				method: request.method,
+				port: target.port,
+				path: request.url,
+				timeout: 0.1,
+				agent: agent
+			}, ( targetResp ) => {
+				console.log( "Response received" )
+				response.statusCode = targetResp.statusCode
+				targetResp.pipe( response )
+			})
+			req.on( 'error', ( problem ) => {
+				console.log( "Error: ", problem )
+			})
+			req.end()
+	}
+}
+
+/*
+ * Responsible for delegating a proxy request the correct proxy handler
  */
 class DeltaIngress {
 	constructor( listening, mesh ){
@@ -55,24 +84,8 @@ class DeltaIngress {
 		} else {
 			console.log( "Finding targets", this.targets, request.url )
 			let target = this.mesh.find_target( this.targets )
-			let agent = new http.Agent({ keepAlive: false })
-			console.log( "Requesting ", target, request.method, request.url )
-			let req = http.request({
-				host: 'localhost',
-				method: request.method,
-				port: target.port,
-				path: request.url,
-				timeout: 0.1,
-				agent: agent
-			}, ( targetResp ) => {
-				console.log( "Response received" )
-				response.statusCode = targetResp.statusCode
-				targetResp.pipe( response )
-			})
-			req.on( 'error', ( problem ) => {
-				console.log( "Error: ", problem )
-			})
-			req.end()
+			let proxier = new HandRolledProxier()
+			proxier.proxy( target, request, response )
 		}
 	}
 }
@@ -104,6 +117,9 @@ class Delta {
 		return controller.start()
 	}
 
+	/*
+	 * Establish a service to handle incoming requests
+	 */
 	ingress( port ) {
 		let server = new http.Server( ( request, response ) => {
 			console.log("Accepted request")
