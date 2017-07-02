@@ -32,6 +32,9 @@ function http_promise_listen_url( service, port ){
 	})
 }
 
+/*
+ * Responsible for delegating a proxy request to the correct library
+ */
 class DeltaIngress {
 	constructor( listening, mesh ){
 		if( !listening ){ throw new Error("listening required") }
@@ -74,6 +77,9 @@ class DeltaIngress {
 	}
 }
 
+/*
+ * A target which may be communciated with
+ */
 class DeltaTarget {
 	constructor( port ) {
 		if( !port ) { throw new Error("port may not be falsy"); }
@@ -81,6 +87,9 @@ class DeltaTarget {
 	}
 }
 
+/*
+ * Top level proxy system state manager
+ */
 class Delta {
 	constructor() {
 		this.intake = []
