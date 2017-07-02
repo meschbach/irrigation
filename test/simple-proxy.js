@@ -19,14 +19,17 @@ class SimpleTestService {
 	start() {
 		return delta.defer( (resolve, reject ) => {
 			this.app = express()
-			this.app.use( morgan( "long" ) )
+			this.app.use( morgan( "short" ) )
 			this.app.use( bodyParser.json() )
 			this.app.get( "/proxy-test/received", (request,response) => {
 				response.json( {passed: true })
 			})
 
 			this.app.post( "/proxy-test/post-test", ( request, response ) => {
-				response.json( {passed: true } )
+				//console.log( "Proxy post JSON test header: ", request.get('Content-Type') )
+				//console.log( "Proxy post JSON test body: ", request.body )
+				let value = request.body['shooting stars']
+				response.json( {passed: value == "moon" } )
 			})
 
 			let listener = this.app.listen( 0, () => {

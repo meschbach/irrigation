@@ -58,6 +58,7 @@ class HandRolledProxier {
 				port: target.port,
 				path: request.url,
 				timeout: 0.1,
+				headers: request.headers,
 				agent: agent
 			}, ( targetResp ) => {
 				console.log( "Response received" )
@@ -67,7 +68,7 @@ class HandRolledProxier {
 			req.on( 'error', ( problem ) => {
 				console.log( "Error: ", problem )
 			})
-			req.end()
+			request.pipe( req )
 	}
 }
 
