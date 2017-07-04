@@ -17,6 +17,61 @@ class DeltaClient {
 				return true
 			})
 	}
+
+	ingress( port = 0, wire_proxy_name = "hand" ) {
+		if( !Number.isInteger( port ) ) { throw new Error( "Expected port to be a number, got: " + port ) }
+		if( port < 0 || 65535 < port ){ throw new Error("Port number is invalid: ", port ) }
+
+		return promise_requests.post_json( this.url + "/v1/ingress", { port: port, wire_proxy: wire_proxy_name, wait: true } )
+			.then( ( result ) => {
+				if( result.headers.statusCode != 201 ){ throw new Error( result.headers.statusCode + " != 201" ) }
+				return new DeltaIngressResource( result.body._self )
+			})
+	}
+}
+
+class DeltaIngressResource {
+	constructor( url ) {
+		if( !url ) { throw new Error( "URL must be defined" ) }
+		this.url = url
+		this.loaded = false
+	}
+
+	clear_cache() {
+		this.loaded = false
+		this.retrival = undefined
+		this.cache = undefined
+	}
+
+	addTarget( name ) {
+		return promise_requests.post_json( this.url, { add_targets: [ name ] } )
+			.then( ( result ) => {
+				this.clear_cache()
+				if( result.headers.statusCode != 200 ){ throw new Error( result.headers.statusCode + " != 200" ) }
+				return this
+			})
+	}
+
+	refresh() {
+		this.clear_cache()
+		this.retrieval = promise_requests.get_json( this.url ).then( ( response ) => {
+			console.log( "Completed retrieval", response.body )
+			this.loaded = true
+			this.cache = JSON.parse( response.body )
+		})
+		return this.retrieval
+	}
+
+	/*
+	 * returns a promise for the address once resolved
+	 */
+	address() {
+		if( !this.retrieval ) { this.refresh() }
+		return this.retrieval.then( () => {
+			console.log( "Address request" )
+			return this.cache.address
+		})
+	}
 }
 
 module.exports = DeltaClient

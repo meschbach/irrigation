@@ -7,6 +7,7 @@ let http = require( 'http' )
 let morgan = require( 'morgan' )
 let q = require( 'q' )
 let request = require( 'request' )
+let url = require( 'url' )
 
 // Internal dependencies
 let defer = require( './defer' )
@@ -25,8 +26,12 @@ function promise_get_request( url ) {
 
 function http_promise_listen_url( service, port ){
 	return defer( ( resolve, reject ) => {
+		console.log( "Awaiting listener" )
 		let listener = service.listen( port, () => {
-			let url = "http://localhost:" + listener.address().port
+			let host = "localhost"
+			//let host = listener.address().address
+			let url = "http://" + host + ":" + listener.address().port
+			console.log("Listneing on ", url)
 			resolve( url )
 		})
 	})
@@ -193,6 +198,23 @@ class Delta {
  	 */
 	find_target( target ){
 		return this.targets[target];
+	}
+
+	find_ingress( address ){
+		let address_promises = this.intake.map( (ingress) => {
+			return ingress.listening.then( ( listening_url ) => {
+				console.log( "parseing URL: ", listening_url )
+				let resource_name = url.parse( listening_url ).host
+				console.log( "Resource: ", resource_name )
+				return {ingress: ingress, address: resource_name }
+			})
+		})
+		return q.all( address_promises ).then( ( listeners ) => {
+			let matched = listeners.find( ( listener ) => {
+				return listener.address == address
+			})
+			return matched ? matched.ingress : undefined
+		})
 	}
 }
 
