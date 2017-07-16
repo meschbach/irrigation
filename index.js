@@ -165,9 +165,9 @@ class Delta {
 	/**
 	 * Boots up the default ingress listener and attaches a handler for hearing control messages
 	 */
-	start() {
+	start( port ) {
 		let controller = new ExpressControlInterface( this )
-		return controller.start()
+		return controller.start( port )
 	}
 
 	/*
@@ -215,6 +215,14 @@ class Delta {
 			})
 			return matched ? matched.ingress : undefined
 		})
+	}
+
+	list_ingress() {
+		return this.intake.map( ( ingress ) => {
+			let addressURL = ingress.listening.inspect().value
+			let address = { address: addressURL, resolved: addressURL != undefined }
+			return address
+		} )
 	}
 }
 

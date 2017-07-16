@@ -28,6 +28,12 @@ class DeltaClient {
 				return new DeltaIngressResource( result.body._self )
 			})
 	}
+
+	ingress_all() { return promise_requests.get_json( this.url + "/v1/ingress" ) }
+
+	status() {
+		return promise_requests.get_json( this.url + "/v1/status" )
+	}
 }
 
 class DeltaIngressResource {
@@ -55,9 +61,8 @@ class DeltaIngressResource {
 	refresh() {
 		this.clear_cache()
 		this.retrieval = promise_requests.get_json( this.url ).then( ( response ) => {
-			console.log( "Completed retrieval", response.body )
 			this.loaded = true
-			this.cache = JSON.parse( response.body )
+			this.cache = response
 		})
 		return this.retrieval
 	}
@@ -68,7 +73,7 @@ class DeltaIngressResource {
 	address() {
 		if( !this.retrieval ) { this.refresh() }
 		return this.retrieval.then( () => {
-			console.log( "Address request" )
+			console.log( "Address request", this.cache )
 			return this.cache.address
 		})
 	}

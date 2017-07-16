@@ -25,14 +25,15 @@ class ExpressControlInterface {
 
 	is_running(){ return this.http_service != undefined }
 
-	start( ) {
+	start( port ) {
+		port = port || 0
 		if( this.is_running() ) { return this.start_promise; }
 
 		let service = express()
 		service.p_post = function promised_post( uri, handler ){
 			this.post( uri, ( req, resp ) => {
 				let promised = handler( req, resp )
-				q( promised ).finally( () => {
+				q( promised ).done( () => {
 					if( !resp.finished ) {
 						console.error( "Failed to finish response" )
 					}
@@ -45,6 +46,7 @@ class ExpressControlInterface {
 				})
 			})
 		}
+
 		service.use( morgan( 'short' ) )
 		service.use( bodyParser.json() )
 		service.post( '/v1/target/:name', ( req, resp ) => {
@@ -52,6 +54,12 @@ class ExpressControlInterface {
 			resp.statusCode = 201
 			resp.end()
 		})
+
+		service.get( '/v1/ingress', ( req, resp ) => {
+			let ingress_points = this.delta.list_ingress()
+			resp.json({ ingress: ingress_points })
+		})
+
 		service.p_post( '/v1/ingress', ( req, resp ) => {
 			// Validate message
 			let port = req.body.port || 0
@@ -105,9 +113,13 @@ class ExpressControlInterface {
 			})
 		})
 
+		service.get( "/v1/status", ( req, resp ) => {
+			resp.json( { ok: true } )
+		})
+
 		this.http_service = service
 
-		this.start_promise = express_extensions.promise_listening_url( service, 0 )
+		this.start_promise = express_extensions.promise_listening_url( service, port )
 		return this.start_promise
 	}
 
