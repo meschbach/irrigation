@@ -6,7 +6,16 @@
 
 let args = require( 'yargs' )
 	.option( 'port', { default: 9000 } )
+	.options( 'ttl', { description: 'Terminate the serivce after a set period of seconds.' } )
 	.argv
+
+if( args.ttl ) {
+	setTimeout( () => {
+		console.error( "TTL expired." );
+		process.exit( 1 );
+	}, args.ttl * 1000 )
+}
+
 
 let delta = require( "./index" )
 let service = new delta.Delta()
