@@ -65,12 +65,12 @@ class SingleProxyHarness {
 				console.log("test running", testPort)
 				console.log("delta running", deltaPort)
 				let test_registration = test.register( deltaPort, "test-1" )
-				let ingress_creation = new delta.DeltaClient( deltaServiceAddress ).ingress( 0, this.wire_proxy_name )
+				let ingress_creation = new delta.DeltaClient( deltaServiceAddress ).ingress()
 				return q.all( [ test_registration, ingress_creation ] )
 			})
 			.spread( ( test_registration, ingress_resource ) => {
 				return ingress_resource.addTarget( 'test-1' ).then( () => {
-					return ingress_resource.address().then( ( address ) => { return "http://" + address } )
+					return ingress_resource.address()
 				})
 			})
 		return this.ingress

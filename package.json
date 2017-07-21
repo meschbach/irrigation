@@ -1,7 +1,9 @@
 {
 	"name" : "delta",
+	"version" : "0.1.0",
 	"scripts" : {
-		"test": "mocha"
+		"test": "mocha",
+		"start" : "node service.js"
 	},
 	"devDependencies" : {
 		"chai" : "3.5.0",

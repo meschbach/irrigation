@@ -149,7 +149,7 @@ class NHPWireProxy {
  */
 class Delta {
 	constructor() {
-		this.intake = []
+		this.ingress_controllers = {}
 		this.targets = {}
 
 		this.wire_proxy_factories = {}
@@ -173,7 +173,7 @@ class Delta {
 	/*
 	 * Establish a service to handle incoming requests
 	 */
-	ingress( port, wire_proxy_name ) {
+	ingress( name, port, wire_proxy_name ) {
 		let server = new http.Server( ( request, response ) => {
 			console.log("Accepted request")
 			ingress.requested( request, response )
@@ -185,7 +185,7 @@ class Delta {
 
 		let wire_proxy = wire_factory.produce( {} )
 		var ingress = new DeltaIngress( whenListening, this, wire_proxy )
-		this.intake.push( ingress )
+		this.ingress_controllers[ name ] = ingress
 		return ingress
 	}
 
@@ -200,27 +200,15 @@ class Delta {
 		return this.targets[target];
 	}
 
-	find_ingress( address ){
-		let address_promises = this.intake.map( (ingress) => {
-			return ingress.listening.then( ( listening_url ) => {
-				console.log( "parseing URL: ", listening_url )
-				let resource_name = url.parse( listening_url ).host
-				console.log( "Resource: ", resource_name )
-				return {ingress: ingress, address: resource_name }
-			})
-		})
-		return q.all( address_promises ).then( ( listeners ) => {
-			let matched = listeners.find( ( listener ) => {
-				return listener.address == address
-			})
-			return matched ? matched.ingress : undefined
-		})
+	find_ingress( name ){
+		return this.ingress_controllers[ name ]
 	}
 
 	list_ingress() {
-		return this.intake.map( ( ingress ) => {
+		return Object.keys( this.ingress_controllers ).map( ( name ) => {
+			let ingress = this.ingress_controllers[ name ]
 			let addressURL = ingress.listening.inspect().value
-			let address = { address: addressURL, resolved: addressURL != undefined }
+			let address = { name: name, address: addressURL, resolved: addressURL != undefined }
 			return address
 		} )
 	}

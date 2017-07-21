@@ -65,6 +65,7 @@ class ExpressControlInterface {
 			let port = req.body.port || 0
 			let wire_proxy = req.body.wire_proxy || "hand"
 			let wait = req.body.wait || true
+			let name = req.body.name || "default"
 
 			if( port == 0 && !wait ){
 				resp.statusCode = 422
@@ -73,7 +74,7 @@ class ExpressControlInterface {
 			console.log("Validated request")
 
 			// Perform opertaion
-			let ingress = this.delta.ingress( port, wire_proxy )
+			let ingress = this.delta.ingress( name, port, wire_proxy )
 			let completion = wait ? ingress.listening : q( port )
 			return completion.then( ( boundPort ) => {
 				console.log( "Bound port: ", boundPort )
@@ -81,36 +82,43 @@ class ExpressControlInterface {
 				//TODO Fix
 				let scheme = "http"
 				//let scheme = req.get( "scheme" )
-				let address_url = url.parse( boundPort )
-				let resource_name = address_url.host
-				console.log("Resource name: ", resource_name )
-				resp.json( { _self: scheme + "://" + req.get("host") + "/v1/ingress/" + resource_name } )
+				resp.json( { _self: scheme + "://" + req.get("host") + "/v1/ingress/" + name } )
 			})
 		})
 
-		service.get( '/v1/ingress/:address', ( req, resp ) => {
-			let address = req.params.address
+		service.get( '/v1/ingress/:name', ( req, resp ) => {
+			let name = req.params.name
+			let ingress = this.delta.find_ingress( name )
+			if( !ingress ){
+				resp.statusCode = 404;
+				return resp.end();
+			}
+
+			let address = ingress.listening.inspect().value
 			resp.statusCode = 200
 			resp.json({ address: address })
-		})
+		} )
 
-		service.p_post( '/v1/ingress/:address', ( req, resp ) => {
-			let address = req.params.address
-				console.log( "Finding : ", address )
-			return this.delta.find_ingress( address ).then( (ingress) => {
-				if( !ingress ){
-					resp.statusCode = 404;
-					return resp.end()
-				}
+		service.p_post( '/v1/ingress/:name', ( req, resp ) => {
+			let ingress_name = req.params.name
+			let targets = req.body.add_targets
+			if( !targets ) {
+				resp.statusCode = 422;
+				return resp.json( { errors: { targets: ["missing"] } } );
+			}
 
-				console.log( "Steps")
-				req.body.add_targets.forEach( ( target ) => {
-					ingress.target( target )
-				})
+			let ingress = this.delta.find_ingress( ingress_name )
+			if( !ingress ){
+				resp.statusCode = 404;
+				return resp.end()
+			}
 
-				resp.statusCode = 200
-				resp.end()
+			targets.forEach( ( target ) => {
+				ingress.target( target )
 			})
+
+			resp.statusCode = 200
+			resp.end()
 		})
 
 		service.get( "/v1/status", ( req, resp ) => {

@@ -18,11 +18,11 @@ class DeltaClient {
 			})
 	}
 
-	ingress( port = 0, wire_proxy_name = "hand" ) {
+	ingress( name = "default", port = 0, wire_proxy_name = "hand" ) {
 		if( !Number.isInteger( port ) ) { throw new Error( "Expected port to be a number, got: " + port ) }
 		if( port < 0 || 65535 < port ){ throw new Error("Port number is invalid: ", port ) }
 
-		return promise_requests.post_json( this.url + "/v1/ingress", { port: port, wire_proxy: wire_proxy_name, wait: true } )
+		return promise_requests.post_json( this.url + "/v1/ingress", { name: name, port: port, wire_proxy: wire_proxy_name, wait: true } )
 			.then( ( result ) => {
 				if( result.headers.statusCode != 201 ){ throw new Error( result.headers.statusCode + " != 201" ) }
 				return new DeltaIngressResource( result.body._self )
