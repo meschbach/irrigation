@@ -62,7 +62,7 @@ class HandRolledProxier {
 				method: request.method,
 				port: target.port,
 				path: request.url,
-				timeout: 0.1,
+				timeout: 30,
 				headers: request.headers,
 				agent: agent
 			}, ( targetResp ) => {
@@ -72,6 +72,8 @@ class HandRolledProxier {
 			})
 			req.on( 'error', ( problem ) => {
 				console.log( "Error: ", problem )
+				response.statusCode = 503;
+				response.end();
 			})
 			request.pipe( req )
 	}
@@ -94,16 +96,19 @@ class DeltaIngress {
 	}
 
 	target( name ) {
+		console.log( "Registering target ", name );
 		this.targets.push( name )
 	}
 
 	requested( request, response ){
-		if( this.targets.length == 0 ){
+		let targets = this.targets;
+		if( targets.length == 0 ){
+			console.log( "No targets found." )
 			response.statusCode = 503
 			response.end()
 		} else {
-			console.log( "Finding targets", this.targets, request.url )
-			let target = this.mesh.find_target( this.targets )
+			console.log( "Finding targets", targets, request.url )
+			let target = this.mesh.find_target( targets )
 			this.wire_proxy.proxy( target, request, response )
 		}
 	}

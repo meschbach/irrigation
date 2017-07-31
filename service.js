@@ -11,7 +11,7 @@ let args = require( 'yargs' )
 
 if( args.ttl ) {
 	setTimeout( () => {
-		console.error( "TTL expired." );
+		console.error( "TTL expired after " + args.ttl + " seconds." );
 		process.exit( 1 );
 	}, args.ttl * 1000 )
 }

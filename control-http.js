@@ -49,9 +49,19 @@ class ExpressControlInterface {
 
 		service.use( morgan( 'short' ) )
 		service.use( bodyParser.json() )
+
 		service.post( '/v1/target/:name', ( req, resp ) => {
+			let body = req.body
+			let port = body.port
+
+			if( !port ) {
+				resp.statusCode = 422
+				return resp.json( {errors: { port: "may not be falsy"} } )
+			}
+
 			this.delta.register_target( req.params.name, req.body.port )
 			resp.statusCode = 201
+			resp.json( {} )
 			resp.end()
 		})
 
@@ -102,6 +112,9 @@ class ExpressControlInterface {
 		service.p_post( '/v1/ingress/:name', ( req, resp ) => {
 			let ingress_name = req.params.name
 			let targets = req.body.add_targets
+
+			console.log( "delta-d: Requested to use ", targets, " with ", ingress_name )
+
 			if( !targets ) {
 				resp.statusCode = 422;
 				return resp.json( { errors: { targets: ["missing"] } } );
@@ -114,11 +127,12 @@ class ExpressControlInterface {
 			}
 
 			targets.forEach( ( target ) => {
+				console.log( "delta-d: Registering ", target, " with ", ingress_name )
 				ingress.target( target )
 			})
 
 			resp.statusCode = 200
-			resp.end()
+			resp.json( { status: "ok" })
 		})
 
 		service.get( "/v1/status", ( req, resp ) => {
