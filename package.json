@@ -1,5 +1,6 @@
 {
 	"name": "irrigation",
+	"author": "Mark Eschbach <meschbach@gmail.com>",
 	"version": "0.2.0",
 	"description": "A dynamically configurable HTTP(S) reverse proxy intended to water your applications and static resources",
 	"repository": "github.com/meschbach/irrigation",
