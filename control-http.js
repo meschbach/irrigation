@@ -104,9 +104,10 @@ class ExpressControlInterface {
 				return resp.end();
 			}
 
-			let address = ingress.listening.inspect().value
-			resp.statusCode = 200
-			resp.json({ address: address })
+			ingress.listening.then( (address) => {
+				resp.statusCode = 200
+				resp.json({ address: address })
+			});
 		} )
 
 		service.p_post( '/v1/ingress/:name', ( req, resp ) => {

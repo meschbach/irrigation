@@ -10,31 +10,32 @@ let request = require( 'request' )
 let url = require( 'url' )
 
 // Internal dependencies
-let defer = require( './defer' )
+const Future = require("junk-bucket/Future");
+
 let DeltaClient = require( './client' )
 let promise_post_json_request = require( './promise-requests' ).post_json
 let ExpressControlInterface = require( './control-http' ).ExpressControlInterface
 
 function promise_get_request( url ) {
-	return defer( ( resolve, reject ) => {
-		request( url, (err, resp, body) => {
-			if( err ){ return reject( err ) }
-			resolve( { headers: resp, body } )
-		})
-	})
+	const future = new Future();
+	request( url, (err, resp, body) => {
+		if( err ){ return future.reject( err ) }
+		future.accept( { headers: resp, body } )
+	});
+	return future.promised;
 }
 
 function http_promise_listen_url( service, port ){
-	return defer( ( resolve, reject ) => {
-		console.log( "Awaiting listener" )
-		let listener = service.listen( port, () => {
-			let host = "localhost"
-			//let host = listener.address().address
-			let url = "http://" + host + ":" + listener.address().port
-			console.log("Listneing on ", url)
-			resolve( url )
-		})
+	const future = new Future();
+	console.log( "Awaiting listener" )
+	let listener = service.listen( port, () => {
+		let host = "localhost"
+		//let host = listener.address().address
+		let url = "http://" + host + ":" + listener.address().port
+		console.log("Listneing on ", url)
+		future.accept( url )
 	})
+	return future.promised;
 }
 
 /*
@@ -232,7 +233,6 @@ class Delta {
 	}
 }
 
-exports.defer = defer
 exports.Delta = Delta
 exports.DeltaClient = DeltaClient
 exports.promise_get_request = promise_get_request

@@ -11,34 +11,38 @@ let morgan = require( 'morgan' )
 let q = require( 'q' )
 let request = require( 'request' )
 
+const Future = require("junk-bucket/Future");
+
 let delta = require( "../index" )
 let promise_get_request = delta.promise_get_request
 let promise_post_json_request = delta.promise_post_json_request
 
 class SimpleTestService {
 	start() {
-		return delta.defer( (resolve, reject ) => {
-			this.app = express()
-			this.app.use( morgan( "short" ) )
-			this.app.use( bodyParser.json() )
-			this.app.get( "/proxy-test/received", (request,response) => {
-				response.json( {passed: true })
-			})
+		const future = new Future();
 
-			this.app.post( "/proxy-test/post-test", ( request, response ) => {
-				//console.log( "Proxy post JSON test header: ", request.get('Content-Type') )
-				//console.log( "Proxy post JSON test body: ", request.body )
-				let value = request.body['shooting stars']
-				response.json( {passed: value == "moon" } )
-			})
+		this.app = express()
+		this.app.use( morgan( "short" ) )
+		this.app.use( bodyParser.json() )
+		this.app.get( "/proxy-test/received", (request,response) => {
+			response.json( {passed: true })
+		})
 
-			let listener = this.app.listen( 0, () => {
-				let port = listener.address().port
-				this.port = port
-				resolve( port )
-			})
-			this.appSocket = listener;
-		});
+		this.app.post( "/proxy-test/post-test", ( request, response ) => {
+			//console.log( "Proxy post JSON test header: ", request.get('Content-Type') )
+			//console.log( "Proxy post JSON test body: ", request.body )
+			let value = request.body['shooting stars']
+			response.json( {passed: value == "moon" } )
+		})
+
+		let listener = this.app.listen( 0, () => {
+			let port = listener.address().port
+			this.port = port
+			future.accept( port )
+		})
+		this.appSocket = listener;
+
+		return future.promised;
 	}
 
 	stop() {
