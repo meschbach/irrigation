@@ -1,8 +1,8 @@
 {
-	"name": "delta",
+	"name": "irrigation",
 	"version": "0.1.0",
-	"description": "A dynamically configurable HTTP(S) reverse proxy",
-	"repository": "https://github.com/meschbach/delta",
+	"description": "A dynamically configurable HTTP(S) reverse proxy intended to water your applications and static resources",
+	"repository": "github.com/meschbach/irrigation",
 	"license": "MIT",
 	"scripts": {
 		"test": "mocha",
