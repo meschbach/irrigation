@@ -10,7 +10,7 @@ let request = require( 'request' )
 let url = require( 'url' )
 
 // Internal dependencies
-const Future = require("junk-bucket/Future");
+const Future = require("junk-bucket/future");
 
 let DeltaClient = require( './client' )
 let promise_post_json_request = require( './promise-requests' ).post_json

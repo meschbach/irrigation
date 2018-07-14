@@ -2,7 +2,7 @@
 let request = require( 'request' )
 
 // Internal Dependencies
-const Future = require( "junk-bucket/Future");
+const Future = require( "junk-bucket/future");
 
 //TODO: Most of these should be replaced with request-as-promised
 

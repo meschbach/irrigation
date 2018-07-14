@@ -5,7 +5,7 @@
  */
 
 // Internal dependencies
-const Future = require( 'junk-bucket/Future' );
+const Future = require( 'junk-bucket/future' );
 
 //TOOD: Can these extened the actual application instances?
 /*

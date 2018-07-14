@@ -11,7 +11,7 @@ let morgan = require( 'morgan' )
 let q = require( 'q' )
 let request = require( 'request' )
 
-const Future = require("junk-bucket/Future");
+const Future = require("junk-bucket/future");
 
 let delta = require( "../index" )
 let promise_get_request = delta.promise_get_request

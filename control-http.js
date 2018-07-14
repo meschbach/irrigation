@@ -12,7 +12,7 @@ let q = require( 'q' )
 let url = require( 'url' )
 
 // Internal dependencies
-const Future = require("junk-bucket/Future");
+const Future = require("junk-bucket/future");
 let express_extensions = require( './express-extensions' )
 
 /*
