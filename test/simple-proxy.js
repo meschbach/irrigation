@@ -58,12 +58,12 @@ class SingleProxyHarness {
 		this.wire_proxy_name = wire_proxy_name || "hand"
 	}
 
-	setup(){
+	async setup(){
 		let controlPlane = this.controlPlane = new delta.Delta()
 		let test = this.test = new SimpleTestService()
 
-		let testServiceAddress = test.start()
-		let deltaServiceAddress = controlPlane.start()
+		let testServiceAddress = await test.start()
+		let deltaServiceAddress = await controlPlane.start()
 
 		this.ingress = q.all( [ testServiceAddress, deltaServiceAddress ] )
 			.spread( ( testPort, deltaPort ) => {
@@ -89,10 +89,10 @@ class SingleProxyHarness {
 
 [ 'hand', 'node-http-proxy' ].forEach( ( proxy_type ) => {
 	describe( "Proxying a single system with " + proxy_type, function() {
-		before( function() {
+		before( async function() {
 			this.harness = new SingleProxyHarness( proxy_type )
 			this.started = this.harness.setup()
-			return this.started
+			return await this.started
 		})
 		after( function() { this.harness.stop() })
 

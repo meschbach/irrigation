@@ -12,7 +12,7 @@ let q = require( 'q' )
 let url = require( 'url' )
 
 // Internal dependencies
-let defer = require( './defer' )
+const Future = require("junk-bucket/Future");
 let express_extensions = require( './express-extensions' )
 
 /*
@@ -140,14 +140,16 @@ class ExpressControlInterface {
 		})
 
 		this.http_service = service
-		this.start_promise = defer( ( resolve, reject ) => {
-			let listener = service.listen( port, () => {
-				console.log("Bound");
-				let url = "http://localhost:" + listener.address().port
-				resolve( url )
-			})
-			this.http_socket = listener;
+
+		const bind = new Future();
+		let listener = service.listen( port, () => {
+			let url = "http://localhost:" + listener.address().port
+			console.log( "URL", url );
+			bind.accept( url );
 		})
+		this.http_socket = listener;
+
+		this.start_promise = bind.promised;
 		return this.start_promise
 	}
 
