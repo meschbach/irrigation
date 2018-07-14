@@ -12,7 +12,7 @@ const Future = require( 'junk-bucket/Future' );
  * Promises the listening URL for the application service
  */
 exports.promise_listening_url = function promise_express_listening_url( app, port ){
-	const result = Future();
+	const result = new Future();
 	const listener = app.listen( port, () => {
 		let url = "http://localhost:" + listener.address().port
 		result.resolve( url );

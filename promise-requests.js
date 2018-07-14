@@ -2,32 +2,34 @@
 let request = require( 'request' )
 
 // Internal Dependencies
-let defer = require( './defer' )
+const Future = require( "junk-bucket/Future");
+
+//TODO: Most of these should be replaced with request-as-promised
 
 exports.post_json = ( url, body ) => {
-	return defer( ( resolve, reject ) => {
-		request({
-			method: 'POST',
-			uri: url,
-			json: body
-		}, (error, resp, body ) => {
-			if( error ) { return reject( error ) }
-			resolve( { headers: resp, body } )
-		})
-	})
+	const result = new Future();
+	request({
+		method: 'POST',
+		uri: url,
+		json: body
+	}, (error, resp, body ) => {
+		if( error ) { return result.reject(error); }
+		result.accept({ headers: resp, body });
+	});
+	return result.promised;
 }
 
 exports.get_json_raw = ( url ) => {
-	return defer( ( resolve, reject ) => {
-		request({
-			method: 'GET',
-			uri: url,
-			json: true
-		}, (error, resp, body ) => {
-			if( error ) { return reject( error ) }
-			resolve( { headers: resp, body } )
-		})
+	const result = new Future();
+	request({
+		method: 'GET',
+		uri: url,
+		json: true
+	}, (error, resp, body ) => {
+		if( error ) { return result.reject(error); }
+		result.accept({ headers: resp, body });
 	})
+	return result.promised;
 }
 
 exports.get_json = ( url, responseCode ) => {
@@ -39,4 +41,3 @@ exports.get_json = ( url, responseCode ) => {
 			return response.body
 		})
 }
-
