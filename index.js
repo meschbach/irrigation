@@ -86,13 +86,18 @@ class DeltaIngress {
 	/*
 	 * @param mesh locates the best target to utilize
 	 */
-	constructor( listening, mesh, wire_proxy ){
+	constructor( listening, mesh, wire_proxy, serverSocket ){
 		if( !listening ){ throw new Error("listening required") }
 		if( !mesh ){ throw new Error("mesh required") }
 		this.listening = listening
 		this.targets = []
 		this.mesh = mesh
 		this.wire_proxy = wire_proxy
+		this.serverSocket = serverSocket;
+	}
+
+	end(){
+		this.serverSocket.close();
 	}
 
 	target( name ) {
@@ -172,7 +177,15 @@ class Delta {
 	 */
 	start( port ) {
 		let controller = new ExpressControlInterface( this )
+		this.controlInterface = controller;
 		return controller.start( port )
+	}
+
+	stop(){
+		this.controlInterface.stop();
+		Object.values(this.ingress_controllers).forEach((controller) => {
+			controller.end();
+		});
 	}
 
 	/*
@@ -189,7 +202,7 @@ class Delta {
 		if( !wire_factory ){ throw new Error( "No such wire proxy registered: " + wire_proxy_name ); }
 
 		let wire_proxy = wire_factory.produce( {} )
-		var ingress = new DeltaIngress( whenListening, this, wire_proxy )
+		var ingress = new DeltaIngress( whenListening, this, wire_proxy, server )
 		this.ingress_controllers[ name ] = ingress
 		return ingress
 	}

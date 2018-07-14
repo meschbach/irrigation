@@ -37,7 +37,12 @@ class SimpleTestService {
 				this.port = port
 				resolve( port )
 			})
+			this.appSocket = listener;
 		});
+	}
+
+	stop() {
+		this.appSocket.close();
 	}
 
 	register( controlURL, service_name ) {
@@ -77,7 +82,8 @@ class SingleProxyHarness {
 	}
 
 	stop(){
-		//TODO: implement stopping
+		this.test.stop();
+		this.controlPlane.stop();
 	}
 }
 

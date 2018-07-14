@@ -140,13 +140,25 @@ class ExpressControlInterface {
 		})
 
 		this.http_service = service
-
-		this.start_promise = express_extensions.promise_listening_url( service, port )
+		this.start_promise = defer( ( resolve, reject ) => {
+			let listener = service.listen( port, () => {
+				console.log("Bound");
+				let url = "http://localhost:" + listener.address().port
+				resolve( url )
+			})
+			this.http_socket = listener;
+		})
 		return this.start_promise
 	}
 
 	stop() {
-		this.http_service.close()
+		if (this.http_socket) {
+			console.info("Cleaning up HTTP socket");
+			this.http_socket.close()
+			this.http_socket = undefined
+		} else {
+			console.warn("Not bound, may leak");
+		}
 		this.http_service = undefined
 		this.start_promise = undefined
 	}
