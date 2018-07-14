@@ -24,5 +24,11 @@
 	},
 	"optionalDependencies": {
 		"http-proxy": "1.16.2"
-	}
+	},
+	"keywords": [
+		"http",
+		"https",
+		"proxy",
+		"reverse proxy"
+	]
 }
