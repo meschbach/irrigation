@@ -78,6 +78,10 @@ class HandRolledProxier {
 			})
 			request.pipe( req )
 	}
+
+	upgrade(){
+		throw new Error("Upgrades not supported");
+	}
 }
 
 /*
@@ -118,6 +122,18 @@ class DeltaIngress {
 			this.wire_proxy.proxy( target, request, response )
 		}
 	}
+
+	upgrade( request, socket, head ){
+		let targets = this.targets;
+		if( targets.length == 0 ){
+			console.log( "No targets found." )
+			socket.end();
+		} else {
+			console.log( "Finding targets", targets, request.url )
+			let target = this.mesh.find_target( targets )
+			this.wire_proxy.upgrade( target, request, socket, head )
+		}
+	}
 }
 
 /*
@@ -152,6 +168,10 @@ class NHPWireProxy {
 
 	proxy( target, request, response ){
 		this.wire.web( request, response, { target: "http://localhost:" + target.port } )
+	}
+
+	upgrade( target, request, socket, head ){
+		this.wire.ws(request, socket, head, {target: "http://localhost:" + target.port});
 	}
 }
 
@@ -197,13 +217,17 @@ class Delta {
 			console.log("Accepted request")
 			ingress.requested( request, response )
 		})
+		server.on("upgrade", function(request, socket, head){
+			console.log("Upgrade");
+			ingress.upgrade(request, socket, head);
+		});
 		let whenListening = http_promise_listen_url( server, 0 )
 
 		let wire_factory = this.wire_proxy_factories[ wire_proxy_name || "hand" ]
 		if( !wire_factory ){ throw new Error( "No such wire proxy registered: " + wire_proxy_name ); }
 
 		let wire_proxy = wire_factory.produce( {} )
-		var ingress = new DeltaIngress( whenListening, this, wire_proxy, server )
+		const ingress = new DeltaIngress( whenListening, this, wire_proxy, server )
 		this.ingress_controllers[ name ] = ingress
 		return ingress
 	}
