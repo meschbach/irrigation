@@ -29,8 +29,6 @@ class SimpleTestService {
 		})
 
 		this.app.post( "/proxy-test/post-test", ( request, response ) => {
-			//console.log( "Proxy post JSON test header: ", request.get('Content-Type') )
-			//console.log( "Proxy post JSON test body: ", request.body )
 			let value = request.body['shooting stars']
 			response.json( {passed: value == "moon" } )
 		})
@@ -92,7 +90,7 @@ class SingleProxyHarness {
 }
 
 [ 'hand', 'node-http-proxy' ].forEach( ( proxy_type ) => {
-	describe( "Proxying a single system with " + proxy_type, function() {
+	describe( "Proxying a single system with " + proxy_type + " over HTTP", function() {
 		before( async function() {
 			this.harness = new SingleProxyHarness( proxy_type )
 			this.started = this.harness.setup()
@@ -103,7 +101,6 @@ class SingleProxyHarness {
 		describe( "For a GET 200 OK resource", function(){
 			before( function(){
 				let response_promise = this.started.then( ( ingressURL ) => {
-					console.log( "Requesting ", ingressURL )
 					let uri = ingressURL + "/proxy-test/received"
 					return promise_get_request( uri )
 				})
@@ -126,7 +123,6 @@ class SingleProxyHarness {
 		describe( "For a POST 200 OK resource", function(){
 			before( function(){
 				let response_promise = this.started.then( ( ingressURL ) => {
-					console.log( "Requesting ", ingressURL )
 					let url = ingressURL + "/proxy-test/post-test"
 					let body = { "shooting stars" : "moon" }
 					return promise_post_json_request( url, body )
