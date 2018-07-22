@@ -1,3 +1,8 @@
+/*
+ * Irragation L7 Proxy System
+ *
+ * Client Interface
+ */
 
 // Internal dependencies
 let promise_requests = require( './promise-requests' )
