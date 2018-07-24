@@ -76,16 +76,31 @@ class ExpressControlInterface {
 			let wire_proxy = req.body.wire_proxy || "hand"
 			let wait = req.body.wait || true
 			let name = req.body.name || "default"
+			const scheme = req.body.scheme || "http";
+			const domainNames = req.body.domainNames || [];
 
 			if( port == 0 && !wait ){
 				resp.statusCode = 422
 				return resp.json( { errors: ["Must wait on unspecified ports"] } )
 			}
+			if( !["http", "https"].includes(scheme) ){
+				resp.statusCode = 422;
+				return resp.json( { errors: {scheme: ["must be either http or https"]}} );
+			}
+			if( scheme == "https" && domainNames.length == 0) {
+				resp.statusCode = 422;
+				return resp.json( { errors: {domainNames: ["Must contain a list of domains to handle certificates for"]}} );
+			}
 			console.log("Validated request")
 
 			// Perform opertaion
-			let ingress = this.delta.ingress( name, port, wire_proxy )
-			let completion = wait ? ingress.listening : q( port )
+			let ingress;
+			if( scheme == "https") {
+				ingress = this.delta.secureIngress( name, port, wire_proxy, domainNames )
+			} else {
+				ingress = this.delta.ingress( name, port, wire_proxy )
+			}
+			let completion = wait ? ingress.listening : Promise.resolve( port )
 			return completion.then( ( boundPort ) => {
 				console.log( "Bound port: ", boundPort )
 				resp.statusCode = 201

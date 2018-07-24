@@ -29,6 +29,13 @@ function ingress_intake( args ){
 	)
 }
 
+function secure_ingress_intake( args ){
+	configureClient( args ).secureIngress( args.name, args.port, args.handler, [].concat(args["dns-name"]) ).then(
+		( ingress ) => { console.log( { success: ingress } ) },
+		( error ) => { console.error( { error } ) }
+	)
+}
+
 let args = require( 'yargs' )
 	.usage( "$0 <command>" )
 	.option( 'service', { describe: 'URL to contact the service controller at', default: process.env.DELTA_ADDR || "http://localhost:9000" } )
@@ -39,6 +46,12 @@ let args = require( 'yargs' )
 			opts.option( "port", { description: "The port to bind to", default: 0 } )
 			opts.option( "wire-proxy", { descriptioN: "Wire proxy handler to actually delegate the call", default: "hand" } )
 		}, ingress_intake )
+		opts.command( "secure-intake", "Binds a new ingress point using TLS", ( opts ) => {
+			opts.option( "name", { description: "Ingress name", default: "default" } )
+			opts.option( "port", { description: "The port to bind to", default: 0 } )
+			opts.option( "wire-proxy", { description: "Wire proxy handler to actually delegate the call", default: "hand" } )
+			opts.option( "dns-name",  { description: "Domain names to bind to (use multiple)", required: true } )
+		}, secure_ingress_intake )
 	}, showHelp )
 	.help()
 

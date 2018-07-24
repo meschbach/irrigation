@@ -4,6 +4,7 @@
 let bodyParser = require('body-parser');
 let express = require( 'express' )
 let http = require( 'http' )
+const https = require( 'https' );
 let morgan = require( 'morgan' )
 let q = require( 'q' )
 let request = require( 'request' )
@@ -15,6 +16,8 @@ const Future = require("junk-bucket/future");
 let DeltaClient = require( './client' )
 let promise_post_json_request = require( './promise-requests' ).post_json
 let ExpressControlInterface = require( './control-http' ).ExpressControlInterface
+
+const {GreenlockPlugin} = require( "./greenlock" );
 
 function promise_get_request( url ) {
 	const future = new Future();
@@ -199,6 +202,11 @@ class Delta {
 	start( port ) {
 		let controller = new ExpressControlInterface( this )
 		this.controlInterface = controller;
+		this.certificateStorage = new GreenlockPlugin();
+		this.certificateStorage.start({
+			email: "meschbach@gmail.com",
+			tos: true
+		});
 		return controller.start( port )
 	}
 
@@ -222,6 +230,29 @@ class Delta {
 			ingress.upgrade(request, socket, head);
 		});
 		let whenListening = http_promise_listen_url( server, 0 )
+
+		let wire_factory = this.wire_proxy_factories[ wire_proxy_name || "hand" ]
+		if( !wire_factory ){ throw new Error( "No such wire proxy registered: " + wire_proxy_name ); }
+
+		let wire_proxy = wire_factory.produce( {} )
+		const ingress = new DeltaIngress( whenListening, this, wire_proxy, server )
+		this.ingress_controllers[ name ] = ingress
+		return ingress
+	}
+
+	secureIngress( name, port, wire_proxy_name, domainNames ) {
+		console.log("*** Secure ingress ", name, " on ", port);
+		if( !domainNames ) { throw new Error("TLS requires names, please pass domain names"); }
+		const socketOptions = this.certificateStorage.configureSocketOptions(domainNames)
+		let server = new https.Server( socketOptions, ( request, response ) => {
+			console.log("Accepted request")
+			ingress.requested( request, response )
+		})
+		server.on("upgrade", function(request, socket, head){
+			console.log("Upgrade");
+			ingress.upgrade(request, socket, head);
+		});
+		let whenListening = http_promise_listen_url( server, port )
 
 		let wire_factory = this.wire_proxy_factories[ wire_proxy_name || "hand" ]
 		if( !wire_factory ){ throw new Error( "No such wire proxy registered: " + wire_proxy_name ); }
