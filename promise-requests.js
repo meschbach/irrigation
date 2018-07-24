@@ -41,3 +41,16 @@ exports.get_json = ( url, responseCode ) => {
 			return response.body
 		})
 }
+
+exports.put_json = ( url, body ) => {
+	const result = new Future();
+	request({
+		method: 'PUT',
+		uri: url,
+		json: body
+	}, (error, resp, body ) => {
+		if( error ) { return result.reject(error); }
+		result.accept({ headers: resp, body });
+	})
+	return result.promised;
+}

@@ -34,11 +34,11 @@ class DeltaClient {
 			})
 	}
 
-	async secureIngress( name = "default", port = 0, wire_proxy_name = "hand", domains ) {
+	async secureIngress( name = "default", port = 0, wire_proxy_name = "hand", certificateName ) {
 		if( !Number.isInteger( port ) ) { throw new Error( "Expected port to be a number, got: " + port ) }
 		if( port < 0 || 65535 < port ){ throw new Error("Port number is invalid: ", port ) }
-		if( domains.length == 0 ){
-			throw new Error("One or more domains need to be specified to bring the intake on-line");
+		if( !certificateName ){
+			throw new Error("Certificate name must be specified");
 		}
 
 		const result = await promise_requests.post_json( this.url + "/v1/ingress", {
@@ -46,7 +46,7 @@ class DeltaClient {
 			port: port,
 			wire_proxy: wire_proxy_name,
 			wait: true,
-			domainNames: domains,
+			certificateName: certificateName,
 			scheme: "https"
 		} )
 
@@ -61,6 +61,18 @@ class DeltaClient {
 
 	status() {
 		return promise_requests.get_json( this.url + "/v1/status" )
+	}
+
+	listCertificates() {
+		return promise_requests.get_json( this.url + "/v1/certificate" );
+	}
+
+	async uploadCertificate( name, cert, key ){
+		const result = await promise_requests.put_json( this.url + "/v1/certificate/" + name, {
+			cert: cert,
+			key: key
+		} );
+		return result.body;
 	}
 }
 

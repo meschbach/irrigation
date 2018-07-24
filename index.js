@@ -16,8 +16,7 @@ const Future = require("junk-bucket/future");
 let DeltaClient = require( './client' )
 let promise_post_json_request = require( './promise-requests' ).post_json
 let ExpressControlInterface = require( './control-http' ).ExpressControlInterface
-
-const {GreenlockPlugin} = require( "./greenlock" );
+const { MemoryCertificateManager } = require( './certificate-manager' );
 
 function promise_get_request( url ) {
 	const future = new Future();
@@ -194,6 +193,8 @@ class Delta {
 		} catch( e ) {
 			console.log( "Not registering http-proxy wire factory because not found" )
 		}
+
+		this.certificateManager = new MemoryCertificateManager();
 	}
 
 	/**
@@ -202,11 +203,6 @@ class Delta {
 	start( port ) {
 		let controller = new ExpressControlInterface( this )
 		this.controlInterface = controller;
-		this.certificateStorage = new GreenlockPlugin();
-		this.certificateStorage.start({
-			email: "meschbach@gmail.com",
-			tos: true
-		});
 		return controller.start( port )
 	}
 
@@ -240,16 +236,16 @@ class Delta {
 		return ingress
 	}
 
-	secureIngress( name, port, wire_proxy_name, domainNames ) {
-		console.log("*** Secure ingress ", name, " on ", port);
-		if( !domainNames ) { throw new Error("TLS requires names, please pass domain names"); }
-		const socketOptions = this.certificateStorage.configureSocketOptions(domainNames)
+	async secureIngress( name, port, wire_proxy_name, certificateName ) {
+		if( !certificateName ) { throw new Error("TLS requires a certificate"); }
+		const socketOptions = await this.certificateManager.retrieve(certificateName)
+		socketOptions.key = Buffer.from( socketOptions.key )
+		socketOptions.cert = Buffer.from( socketOptions.cert )
+
 		let server = new https.Server( socketOptions, ( request, response ) => {
-			console.log("Accepted request")
 			ingress.requested( request, response )
 		})
 		server.on("upgrade", function(request, socket, head){
-			console.log("Upgrade");
 			ingress.upgrade(request, socket, head);
 		});
 		let whenListening = http_promise_listen_url( server, port )

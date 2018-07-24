@@ -13,6 +13,7 @@ let url = require( 'url' )
 
 // Internal dependencies
 const Future = require("junk-bucket/future");
+const {make_async} = require("junk-bucket/express");
 let express_extensions = require( './express-extensions' )
 
 /*
@@ -29,24 +30,7 @@ class ExpressControlInterface {
 		port = port || 0
 		if( this.is_running() ) { return this.start_promise; }
 
-		let service = express()
-		service.p_post = function promised_post( uri, handler ){
-			this.post( uri, ( req, resp ) => {
-				let promised = handler( req, resp )
-				q( promised ).done( () => {
-					if( !resp.finished ) {
-						console.error( "Failed to finish response" )
-					}
-				}, ( err ) => {
-					if( !resp.finished ){
-						console.error( "Error while servicing request", err )
-						resp.statusCode = 500
-						resp.end()
-					}
-				})
-			})
-		}
-
+		let service = make_async( express() )
 		service.use( morgan( 'short' ) )
 		service.use( bodyParser.json() )
 
@@ -70,14 +54,14 @@ class ExpressControlInterface {
 			resp.json({ ingress: ingress_points })
 		})
 
-		service.p_post( '/v1/ingress', ( req, resp ) => {
+		service.a_post( '/v1/ingress', async ( req, resp ) => {
 			// Validate message
 			let port = req.body.port || 0
 			let wire_proxy = req.body.wire_proxy || "hand"
 			let wait = req.body.wait || true
 			let name = req.body.name || "default"
 			const scheme = req.body.scheme || "http";
-			const domainNames = req.body.domainNames || [];
+			const certificateName = req.body.certificateName;
 
 			if( port == 0 && !wait ){
 				resp.statusCode = 422
@@ -87,28 +71,27 @@ class ExpressControlInterface {
 				resp.statusCode = 422;
 				return resp.json( { errors: {scheme: ["must be either http or https"]}} );
 			}
-			if( scheme == "https" && domainNames.length == 0) {
+			if( scheme == "https" && !certificateName ) {
 				resp.statusCode = 422;
-				return resp.json( { errors: {domainNames: ["Must contain a list of domains to handle certificates for"]}} );
+				return resp.json( { errors: {certificateName: ["Must be defined"]}} );
 			}
-			console.log("Validated request")
+			console.log("Validated request; looks reasonable")
 
 			// Perform opertaion
 			let ingress;
 			if( scheme == "https") {
-				ingress = this.delta.secureIngress( name, port, wire_proxy, domainNames )
+				console.log("Certificate name ", certificateName);
+				ingress = this.delta.secureIngress( name, port, wire_proxy, certificateName )
 			} else {
 				ingress = this.delta.ingress( name, port, wire_proxy )
 			}
 			let completion = wait ? ingress.listening : Promise.resolve( port )
-			return completion.then( ( boundPort ) => {
-				console.log( "Bound port: ", boundPort )
-				resp.statusCode = 201
-				//TODO Fix
-				let scheme = "http"
-				//let scheme = req.get( "scheme" )
-				resp.json( { _self: scheme + "://" + req.get("host") + "/v1/ingress/" + name } )
-			})
+			const boundPort = await completion;
+
+			console.log( "Bound port: ", boundPort )
+			resp.statusCode = 201
+			//let scheme = req.get( "scheme" )
+			resp.json( { _self: scheme + "://" + req.get("host") + "/v1/ingress/" + name } )
 		})
 
 		service.get( '/v1/ingress/:name', ( req, resp ) => {
@@ -125,7 +108,7 @@ class ExpressControlInterface {
 			});
 		} )
 
-		service.p_post( '/v1/ingress/:name', ( req, resp ) => {
+		service.a_post( '/v1/ingress/:name', ( req, resp ) => {
 			let ingress_name = req.params.name
 			let targets = req.body.add_targets
 
@@ -154,6 +137,21 @@ class ExpressControlInterface {
 		service.get( "/v1/status", ( req, resp ) => {
 			resp.json( { ok: true } )
 		})
+
+		service.a_get( "/v1/certificate", async ( req, resp ) => {
+			const names = await this.delta.certificateManager.names();
+			resp.json( { ok: true, names } )
+		})
+
+		service.a_put( "/v1/certificate/:name", async (req, resp) => {
+			const name = req.params.name;
+
+			const cert = req.body.cert;
+			const key = req.body.key;
+
+			await this.delta.certificateManager.store( name, cert, key )
+			resp.json( {ok: true } )
+		});
 
 		this.http_service = service
 
