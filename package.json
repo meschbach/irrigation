@@ -19,7 +19,7 @@
 		"bunyan": "1.8.12",
 		"express": "4.16.3",
 		"greenlock": "^2.3.8",
-		"junk-bucket": "1.0.1",
+		"junk-bucket": "1.0.2",
 		"mocha": "5.2.0",
 		"morgan": "1.9.0",
 		"q": "1.5.1",

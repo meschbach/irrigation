@@ -74,6 +74,29 @@ class DeltaClient {
 		} );
 		return result.body;
 	}
+
+	/*******
+	 * Target Pools
+	 ********/
+	async createTargetPool( name ){
+		const result = await promise_requests.put_json( this.url + "/v1/target-pool/" + name, {} );
+		return result.body;
+	}
+
+	async describeTargetPool( name ){
+		const result = await promise_requests.get_json( this.url + "/v1/target-pool/" + name );
+		return result;
+	}
+
+	async registerTarget( inPool, name, url ) {
+		const result = await promise_requests.put_json( this.url + "/v1/target-pool/" + inPool + "/target/" + name, {url: url});
+		return result;
+	}
+
+	async describeTarget( inPool, name ){
+		const result = await promise_requests.get_json( this.url + "/v1/target-pool/" + inPool + "/target/" + name);
+		return result;
+	}
 }
 
 class DeltaIngressResource {
@@ -89,8 +112,22 @@ class DeltaIngressResource {
 		this.cache = undefined
 	}
 
+	/**
+	 * @deprecated
+	 * @param name
+	 * @returns {*|PromiseLike<DeltaIngressResource>|Promise<DeltaIngressResource>}
+	 */
 	addTarget( name ) {
 		return promise_requests.post_json( this.url, { add_targets: [ name ] } )
+			.then( ( result ) => {
+				this.clear_cache()
+				if( result.headers.statusCode != 200 ){ throw new Error( result.headers.statusCode + " != 200" ) }
+				return this
+			})
+	}
+
+	setDefaultPool( name ){
+		return promise_requests.post_json( this.url + "/default-pool", { defaultPool:  name } )
 			.then( ( result ) => {
 				this.clear_cache()
 				if( result.headers.statusCode != 200 ){ throw new Error( result.headers.statusCode + " != 200" ) }

@@ -59,11 +59,14 @@ class HandRolledProxier {
 
 	proxy( target, request, response ){
 			let agent = new http.Agent({ keepAlive: false })
-			console.log( "Requesting ", target, request.method, request.url )
+			const url = new URL(target.url);
+			const host = url.hostname;
+			const port = url.port;
+			console.log( "Requesting ", target, host, port, request.method, request.url )
 			let req = http.request({
-				host: 'localhost',
+				host: host,
 				method: request.method,
-				port: target.port,
+				port: port,
 				path: request.url,
 				timeout: 30,
 				headers: request.headers,
@@ -103,6 +106,10 @@ class DeltaIngress {
 		this.serverSocket = serverSocket;
 	}
 
+	useDefaultPool( named ){
+		this.defaultPool = named;
+	}
+
 	end(){
 		this.serverSocket.close();
 	}
@@ -113,14 +120,16 @@ class DeltaIngress {
 	}
 
 	requested( request, response ){
-		let targets = this.targets;
+		//TODO: This structure can be improved for performance
+		const targetPool = this.mesh.targetPools[this.defaultPool] || {};
+		const targets = Object.values(targetPool.targets || {});
 		if( targets.length == 0 ){
 			console.log( "No targets found." )
 			response.statusCode = 503
 			response.end()
 		} else {
-			console.log( "Finding targets", targets, request.url )
-			let target = this.mesh.find_target( targets )
+			const target = targets[0];
+			console.log( "Dispatching to ", targets, target )
 			this.wire_proxy.proxy( target, request, response )
 		}
 	}
@@ -169,11 +178,11 @@ class NHPWireProxy {
 	}
 
 	proxy( target, request, response ){
-		this.wire.web( request, response, { target: "http://localhost:" + target.port } )
+		this.wire.web( request, response, { target: target.url } )
 	}
 
 	upgrade( target, request, socket, head ){
-		this.wire.ws(request, socket, head, {target: "http://localhost:" + target.port});
+		this.wire.ws(request, socket, head, {target: target.url });
 	}
 }
 
@@ -195,6 +204,7 @@ class Delta {
 		}
 
 		this.certificateManager = new MemoryCertificateManager();
+		this.targetPools = {};
 	}
 
 	/**

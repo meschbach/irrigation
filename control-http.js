@@ -34,21 +34,6 @@ class ExpressControlInterface {
 		service.use( morgan( 'short' ) )
 		service.use( bodyParser.json() )
 
-		service.post( '/v1/target/:name', ( req, resp ) => {
-			let body = req.body
-			let port = body.port
-
-			if( !port ) {
-				resp.statusCode = 422
-				return resp.json( {errors: { port: "may not be falsy"} } )
-			}
-
-			this.delta.register_target( req.params.name, req.body.port )
-			resp.statusCode = 201
-			resp.json( {} )
-			resp.end()
-		})
-
 		service.get( '/v1/ingress', ( req, resp ) => {
 			let ingress_points = this.delta.list_ingress()
 			resp.json({ ingress: ingress_points })
@@ -108,6 +93,7 @@ class ExpressControlInterface {
 			});
 		} )
 
+		//TODO: Deprecated in 0.3 series
 		service.a_post( '/v1/ingress/:name', ( req, resp ) => {
 			let ingress_name = req.params.name
 			let targets = req.body.add_targets
@@ -134,6 +120,30 @@ class ExpressControlInterface {
 			resp.json( { status: "ok" })
 		})
 
+		//TODO: Deprecated in 0.3 series
+		service.a_post( '/v1/ingress/:name/default-pool', ( req, resp ) => {
+			let ingress_name = req.params.name
+			let defaultPool = req.body.defaultPool
+
+			console.log( "delta-d: Requested to use pool ", defaultPool, " with ", ingress_name )
+
+			if( !defaultPool ) {
+				resp.statusCode = 422;
+				return resp.json( { errors: { targets: ["missing"] } } );
+			}
+
+			let ingress = this.delta.find_ingress( ingress_name )
+			if( !ingress ){
+				resp.statusCode = 404;
+				return resp.end()
+			}
+
+			ingress.useDefaultPool( defaultPool );
+
+			resp.statusCode = 200
+			resp.json( { status: "ok" })
+		})
+
 		service.get( "/v1/status", ( req, resp ) => {
 			resp.json( { ok: true } )
 		})
@@ -151,6 +161,100 @@ class ExpressControlInterface {
 
 			await this.delta.certificateManager.store( name, cert, key )
 			resp.json( {ok: true } )
+		});
+
+		/*********************************************
+		 * Legacy Target API
+		 *********************************************/
+		//Legacy -- Being removed
+		service.post( '/v1/target/:name', ( req, resp ) => {
+			let body = req.body
+			let port = body.port
+
+			if( !port ) {
+				resp.statusCode = 422
+				return resp.json( {errors: { port: "may not be falsy"} } )
+			}
+
+			this.delta.register_target( req.params.name, req.body.port )
+			resp.statusCode = 201
+			resp.json( {} )
+			resp.end()
+		})
+
+		/*********************************************
+		 * Target Pool API
+		 *********************************************/
+		service.a_put( '/v1/target-pool/:name', ( req, resp ) => {
+			const name = req.params.name;
+
+			const pools = this.delta.targetPools;
+			const pool = pools[name];
+			if( pool ) {
+				return resp.sendStatus(409, "Already exists");
+			}
+
+			console.log("Creating target pool: ", name);
+			pools[name] = { targets: []};
+			resp.json({ ok: true })
+		});
+
+		service.a_get( '/v1/target-pool/:name', ( req, resp ) => {
+			const name = req.params.name;
+
+			const pools = this.delta.targetPools;
+			const pool = pools[name];
+			if( !pool ) {
+				return resp.sendStatus(404);
+			}
+
+			resp.json({ ok: true, targetPool: pool })
+		});
+
+		service.a_put( '/v1/target-pool/:pool/target/:name', ( req, resp ) => {
+			const poolName = req.params.pool;
+			const targetName = req.params.name;
+
+			const url = req.body.url;
+			if( !url ){
+				return resp.sendStatus(422);
+			}
+
+			const pools = this.delta.targetPools;
+			const pool = pools[poolName];
+			if( !pool ) {
+				console.log("No such pool");
+				return resp.sendStatus(404);
+			}
+
+			if( pool[targetName] ){
+				return resp.sendStatus(409);
+			}
+			pool.targets[targetName] = {
+				url: url,
+				inService: true
+			}
+			console.log("Registering ", targetName, " in ", poolName, " to URL ", url);
+
+			resp.json({ ok: true, targetPool: pool })
+		});
+
+		service.a_get( '/v1/target-pool/:pool/target/:name', ( req, resp ) => {
+			const poolName = req.params.pool;
+			const targetName = req.params.name;
+
+			const pools = this.delta.targetPools;
+			const pool = pools[poolName];
+			if( !pool ) {
+				console.log("No Such pool", poolName, pools);
+				return resp.sendStatus(404);
+			}
+
+			if( !pool.targets[targetName] ){
+				console.log("No such target pool", poolName, targetName, pool);
+				return resp.sendStatus(404);
+			}
+			resp.json({ ok: true, target: pool.targets[targetName] })
 		});
 
 		this.http_service = service
