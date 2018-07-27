@@ -5,25 +5,7 @@ const {Delta} = require("../index");
 const DeltaClient = require("../client");
 const {get_json} = require("../promise-requests");
 
-class Irrigation extends EventEmitter {
-	constructor(){
-		super();
-		this.proxy = new Delta();
-	}
-
-	async start(){
-		this.on("stop", () => { this.proxy.stop(); });
-		this.localControlURL = await this.proxy.start();
-	}
-
-	client(){
-		return new DeltaClient( this.localControlURL );
-	}
-
-	stop(){
-		this.emit("stop");
-	}
-}
+const {Irrigation} = require("./harness");
 
 const express = require("express");
 const {promise_listening_url} = require("../express-extensions");
@@ -107,7 +89,7 @@ describe("given an instance of the system", function(){
 		describe("when target is in service", function(){
 			it("will route to the target", async function(){
 				const ingress = await this.client.ingress();
-				await ingress.setDefaultPool(this.poolName);
+				await ingress.useDefaultPool(this.poolName);
 				const address = await ingress.address();
 				console.log(address);
 

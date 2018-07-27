@@ -12,15 +12,17 @@ class DeltaClient {
 		this.url = controlURL
 	}
 
+	/**
+	 * @deprecated Please use #registerTarget
+	 * @param service_name
+	 * @param port
+	 * @returns {Promise<*>}
+	 */
 	register( service_name , port ) {
 		if( !service_name ){ throw new Error("Expected service_name, is falsy") }
 		if( !port && port != 0 ){ throw new Error("Expected port, got falsy") }
 
-		return promise_requests.post_json( this.url + "/v1/target/" + service_name, { port: port } )
-			.then( ( result ) => {
-				if( result.headers.statusCode != 201 ){ throw new Error( result.headers.statusCode + " != 201" ) }
-				return true
-			})
+		return this.registerTarget("default", service_name + "-" + port, "http://localhost:" + port);
 	}
 
 	ingress( name = "default", port = 0, wire_proxy_name = "hand" ) {
@@ -126,7 +128,7 @@ class DeltaIngressResource {
 			})
 	}
 
-	setDefaultPool( name ){
+	useDefaultPool( name ){
 		return promise_requests.post_json( this.url + "/default-pool", { defaultPool:  name } )
 			.then( ( result ) => {
 				this.clear_cache()
