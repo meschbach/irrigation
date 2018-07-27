@@ -5,25 +5,7 @@ const {Delta} = require("../index");
 const DeltaClient = require("../client");
 const {get_json} = require("../promise-requests");
 
-class Irrigation extends EventEmitter {
-	constructor(){
-		super();
-		this.proxy = new Delta();
-	}
-
-	async start(){
-		this.on("stop", () => { this.proxy.stop(); });
-		this.localControlURL = await this.proxy.start();
-	}
-
-	client(){
-		return new DeltaClient( this.localControlURL );
-	}
-
-	stop(){
-		this.emit("stop");
-	}
-}
+const {Irrigation} = require("./harness");
 
 const express = require("express");
 const {promise_listening_url} = require("../express-extensions");

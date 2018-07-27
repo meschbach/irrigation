@@ -7,11 +7,9 @@ let expect = chai.expect
 let express = require( 'express' )
 let morgan = require( 'morgan' )
 
-const EventEmitter = require("events");
-const {Delta} = require("../index");
-const DeltaClient = require("../client");
-
 const Future = require("junk-bucket/future");
+
+const {Irrigation} = require("./harness");
 
 let delta = require( "../index" )
 let promise_get_request = delta.promise_get_request
@@ -45,26 +43,6 @@ class SimpleTestService {
 
 	stop() {
 		this.appSocket.close();
-	}
-}
-
-class Irrigation extends EventEmitter {
-	constructor(){
-		super();
-		this.proxy = new Delta();
-	}
-
-	async start(){
-		this.on("stop", () => { this.proxy.stop(); });
-		this.localControlURL = await this.proxy.start();
-	}
-
-	client(){
-		return new DeltaClient( this.localControlURL );
-	}
-
-	stop(){
-		this.emit("stop");
 	}
 }
 
