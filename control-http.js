@@ -164,25 +164,6 @@ class ExpressControlInterface {
 		});
 
 		/*********************************************
-		 * Legacy Target API
-		 *********************************************/
-		//Legacy -- Being removed
-		service.post( '/v1/target/:name', ( req, resp ) => {
-			let body = req.body
-			let port = body.port
-
-			if( !port ) {
-				resp.statusCode = 422
-				return resp.json( {errors: { port: "may not be falsy"} } )
-			}
-
-			this.delta.register_target( req.params.name, req.body.port )
-			resp.statusCode = 201
-			resp.json( {} )
-			resp.end()
-		})
-
-		/*********************************************
 		 * Target Pool API
 		 *********************************************/
 		service.a_put( '/v1/target-pool/:name', ( req, resp ) => {
