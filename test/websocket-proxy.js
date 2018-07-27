@@ -2,7 +2,7 @@ const chai = require( 'chai' );
 const expect = chai.expect;
 
 const WebSocket = require('ws');
-const {DeltaClient} = require("../client");
+const DeltaClient = require("../client");
 let delta = require( "../index" )
 
 const {promiseEvent} = require("junk-bucket/future");
@@ -30,17 +30,19 @@ describe( "When configuring an ingress for websockets", function() {
 		this.targetService = service;
 
 		this.proxy = new delta.Delta();
+
 		this.proxyControl = await this.proxy.start();
-		this.proxy.register_target("target", this.targetPort);
-		this.ingress = this.proxy.ingress("ws-test", 0, "node-http-proxy");
-		await promiseEvent(this.ingress.serverSocket, "listening");
-		const ingressAddress = this.ingress.serverSocket.address();
-		this.wsIngressURL = "ws://localhost:"+ingressAddress.port;
-		this.ingress.targets.push("target");
+		this.client = new DeltaClient( this.proxyControl );
+		await this.client.createTargetPool("ws-pool");
+		await this.client.registerTarget("ws-pool", "ws-target", "http://localhost:"+ this.targetPort);
+		const ingress = await this.client.ingress("ws-test", 0, "node-http-proxy");
+
+		this.wsIngressURL = await ingress.address();
+		await ingress.useDefaultPool("ws-pool");
 	});
-	afterEach(function(){
-		this.proxy.stop();
-		this.targetService.close();
+	afterEach( async function(){
+		await this.proxy.stop();
+		await this.targetService.close();
 	});
 
 	it( "relays the websocket connection", async function () {

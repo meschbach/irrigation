@@ -135,13 +135,16 @@ class DeltaIngress {
 	}
 
 	upgrade( request, socket, head ){
-		let targets = this.targets;
+		//TODO: This structure can be improved for performance
+		const targetPool = this.mesh.targetPools[this.defaultPool] || {};
+		const targets = Object.values(targetPool.targets || {});
 		if( targets.length == 0 ){
 			console.log( "No targets found." )
-			socket.end();
+			response.statusCode = 503
+			response.end()
 		} else {
-			console.log( "Finding targets", targets, request.url )
-			let target = this.mesh.find_target( targets )
+			const target = targets[0];
+			console.log( "Dispatching to ", targets, target )
 			this.wire_proxy.upgrade( target, request, socket, head )
 		}
 	}
@@ -178,10 +181,12 @@ class NHPWireProxy {
 	}
 
 	proxy( target, request, response ){
+		console.log("Proxying ", target);
 		this.wire.web( request, response, { target: target.url } )
 	}
 
 	upgrade( target, request, socket, head ){
+		console.log("Upgrading ", target);
 		this.wire.ws(request, socket, head, {target: target.url });
 	}
 }
@@ -267,10 +272,6 @@ class Delta {
 		const ingress = new DeltaIngress( whenListening, this, wire_proxy, server )
 		this.ingress_controllers[ name ] = ingress
 		return ingress
-	}
-
-	register_target( name, port ){
-			this.targets[ name ] = new DeltaTarget( port )
 	}
 
 	/*

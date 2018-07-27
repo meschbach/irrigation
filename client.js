@@ -126,7 +126,7 @@ class DeltaIngressResource {
 			})
 	}
 
-	setDefaultPool( name ){
+	useDefaultPool( name ){
 		return promise_requests.post_json( this.url + "/default-pool", { defaultPool:  name } )
 			.then( ( result ) => {
 				this.clear_cache()
