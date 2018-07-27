@@ -5,11 +5,7 @@ chai.use(chaiAsPromised);
 
 let expect = chai.expect
 let express = require( 'express' )
-let http = require( 'http' )
-let mocha = require( 'mocha' )
 let morgan = require( 'morgan' )
-let q = require( 'q' )
-let request = require( 'request' )
 
 const EventEmitter = require("events");
 const {Delta} = require("../index");
