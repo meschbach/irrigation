@@ -107,7 +107,7 @@ describe("given an instance of the system", function(){
 		describe("when target is in service", function(){
 			it("will route to the target", async function(){
 				const ingress = await this.client.ingress();
-				await ingress.setDefaultPool(this.poolName);
+				await ingress.useDefaultPool(this.poolName);
 				const address = await ingress.address();
 				console.log(address);
 
