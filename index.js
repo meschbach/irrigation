@@ -10,6 +10,8 @@ let q = require( 'q' )
 let request = require( 'request' )
 let url = require( 'url' )
 
+if( !URL ) { URL = url.URL }
+
 // Internal dependencies
 const Future = require("junk-bucket/future");
 
