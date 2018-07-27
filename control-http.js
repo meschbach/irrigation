@@ -120,7 +120,6 @@ class ExpressControlInterface {
 			resp.json( { status: "ok" })
 		})
 
-		//TODO: Deprecated in 0.3 series
 		service.a_post( '/v1/ingress/:name/default-pool', ( req, resp ) => {
 			let ingress_name = req.params.name
 			let defaultPool = req.body.defaultPool
@@ -143,6 +142,42 @@ class ExpressControlInterface {
 			resp.statusCode = 200
 			resp.json( { status: "ok" })
 		})
+
+		/*********************************************
+		 * Rules API
+		 *********************************************/
+		service.a_put( '/v1/ingress/:name/routing', ( req, resp ) => {
+			const ingress_name = req.params.name;
+
+			let ingress = this.delta.find_ingress( ingress_name )
+			if( !ingress ){
+				resp.statusCode = 404;
+				return resp.end()
+			}
+
+			// Verify rules exist
+			const rules = req.body.rules;
+			if( !rules || !rules.length ){
+				resp.statusCode = 422;
+				resp.json({ok:false, errors: {rules: ["missing array"]}});
+			}
+
+			const targetPoolRules = rules.map( (rule) => {
+				switch(rule.type) {
+					case "path.prefix":
+						return ( defaultTarget, req ) => {
+							const path = req.url;
+							return path.startsWith(rule.is) ? rule.target : defaultTarget;
+						}
+					default:
+						//TODO: This should behandled in validation
+						throw new Error("unsupported rule " + rule.type);
+				}
+			});
+			ingress.targetPoolRules = targetPoolRules;
+			resp.json({ok: true});
+		} );
+
 
 		service.get( "/v1/status", ( req, resp ) => {
 			resp.json( { ok: true } )
@@ -176,7 +211,7 @@ class ExpressControlInterface {
 			}
 
 			console.log("Creating target pool: ", name);
-			pools[name] = { targets: []};
+			pools[name] = { targets: [] };
 			resp.json({ ok: true })
 		});
 

@@ -104,6 +104,8 @@ class DeltaIngress {
 		this.mesh = mesh
 		this.wire_proxy = wire_proxy
 		this.serverSocket = serverSocket;
+
+		this.targetPoolRules = [];
 	}
 
 	useDefaultPool( named ){
@@ -114,6 +116,10 @@ class DeltaIngress {
 		this.serverSocket.close();
 	}
 
+	/**
+	 * @deprecated
+	 * @param name
+	 */
 	target( name ) {
 		console.log( "Registering target ", name );
 		this.targets.push( name )
@@ -121,7 +127,13 @@ class DeltaIngress {
 
 	requested( request, response ){
 		//TODO: This structure can be improved for performance
-		const targetPool = this.mesh.targetPools[this.defaultPool] || {};
+		const targetPoolName = this.targetPoolRules.reduce( (pool, f) => {
+			return f(pool, request)
+		}, this.defaultPool);
+
+		console.log("Resolve target pool too: ", targetPoolName);
+		const targetPool = this.mesh.targetPools[targetPoolName] || {};
+		console.log("Pool: ", this.mesh.targetPools);
 		const targets = Object.values(targetPool.targets || {});
 		if( targets.length == 0 ){
 			console.log( "No targets found." )

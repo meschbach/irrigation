@@ -137,6 +137,15 @@ class DeltaIngressResource {
 			})
 	}
 
+	applyRules( rules ){
+		return promise_requests.put_json( this.url + "/routing", { rules } )
+			.then( ( result ) => {
+				this.clear_cache()
+				if( result.headers.statusCode != 200 ){ throw new Error( result.headers.statusCode + " != 200" ) }
+				return this
+			})
+	}
+
 	refresh() {
 		this.clear_cache()
 		this.retrieval = promise_requests.get_json( this.url ).then( ( response ) => {
