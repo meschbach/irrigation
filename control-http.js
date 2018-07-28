@@ -173,6 +173,12 @@ class ExpressControlInterface {
 						return ( defaultTarget, req ) => {
 							return req.headers["host"] == req.host ? rule.target : defaultTarget;
 						}
+					case "host.path-prefix":
+						return (defaultTarget, req ) => {
+							const host = req.headers["host"];
+							const path = req.url;
+							return ( host == rule.host && path.startsWith(rule.prefix) ) ? rule.target : defaultTarget;
+						}
 					default:
 						//TODO: This should behandled in validation
 						throw new Error("unsupported rule " + rule.type);
