@@ -14,7 +14,7 @@ function configureClient( args ){
 
 function statusCommand( args ){
 	configureClient( args ).status()
-		.done( ( status ) => { console.log( status ) }, ( error ) => { console.error( error ) } )
+		.then( ( status ) => { console.log( status ) }, ( error ) => { console.error( error ) } )
 }
 
 function ingress_list( args ){
