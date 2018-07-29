@@ -18,14 +18,14 @@ function statusCommand( args ){
 }
 
 function ingress_list( args ){
-	configureClient( args ).ingress_all().done(
+	configureClient( args ).ingress_all().then(
 		( ingress ) => { console.log( "Ingress points: ", ingress ) },
 		( error ) => { console.error( "Encountered error: ", error ) }
 	)
 }
 
 function ingress_intake( args ){
-	configureClient( args ).ingress( args.port, args.handler ).done(
+	configureClient( args ).ingress( args.port, args.handler ).then(
 		( ingress ) => { console.log( { success: ingress } ) },
 		( error ) => { console.error( { error } ) }
 	)
