@@ -1,0 +1,24 @@
+[Unit]
+# Metadata
+Description=Irrigation HTTP(S) Dynamic Proxy
+Documentation=https://github.com/meschbach/irrigation
+
+# Wait for networking
+Requires=network-online.target
+After=network-online.target
+
+[Service]
+Slice=machine.slice
+# Resource limits
+Delegate=true
+#CPUShares=2048
+MemoryMax=1G
+
+# Fetch the app (not strictly required, `rkt run` will fetch the image if there is not one)
+ExecStartPre=/usr/bin/rkt fetch --insecure-options=image docker://meschbach/irrigation
+# Start the app
+ExecStart=/usr/bin/rkt run --inherit-env --net=host docker://meschbach/irrigation --readonly-rootfs=true
+ExecStopPost=/usr/bin/rkt gc --mark-only
+KillMode=mixed
+Restart=always
+Environment=UNIFIED_CGROUP_HIERARCHY=no
