@@ -16,12 +16,15 @@ const Future = require("junk-bucket/future");
 const {make_async} = require("junk-bucket/express");
 let express_extensions = require( './express-extensions' )
 
+const jwt = require("jsonwebtoken");
+
 /*
  * Control Plane
  */
 class ExpressControlInterface {
 	constructor( delta ) {
 		this.delta = delta
+		this.authorizeRequests = undefined;
 	}
 
 	is_running(){ return this.http_service != undefined }
@@ -32,6 +35,13 @@ class ExpressControlInterface {
 
 		let service = make_async( express() )
 		service.use( morgan( 'short' ) )
+		service.use( (req,resp, next ) => {
+			if( this.authorizeRequests ){
+				this.authorizeRequests(req,resp,next);
+			}else {
+				next();
+			}
+		});
 		service.use( bodyParser.json() )
 
 		service.get( '/v1/ingress', ( req, resp ) => {
@@ -283,6 +293,53 @@ class ExpressControlInterface {
 			resp.json({ ok: true, target: pool.targets[targetName] })
 		});
 
+		/*********************************************
+		 * Security controls
+		 *********************************************/
+		service.a_get("/v1/security", (req, resp) => {
+			resp.json({party: !this.authorizeRequests });
+		});
+
+		service.a_put("/v1/jwt", (req, resp) => {
+			console.log("Installing JWT key");
+			const base64Key = req.body.symmetricSecret;
+			if( !base64Key ){
+				return resp.status(422).end();
+			}
+			const key = Buffer.from(base64Key, 'base64');
+
+			this.authorizeRequests = (req, resp, next) => {
+				const auth = req.header("Authorization");
+				if( !auth ){
+					resp.status(403);
+					return resp.end();
+				}
+
+				const parts = auth.split(" ");
+				if( parts.length != 2 || parts[0] != "Bearer" ){
+					resp.status(403);
+					return resp.end();
+				}
+
+				const token = parts[1];
+				jwt.verify(token, key, (err, decoded) => {
+					if( err ){
+						resp.status(403);
+						return resp.end();
+					} else {
+						req.user = decoded;
+						next();
+					}
+				});
+			};
+
+			resp.status(202);
+			resp.end();
+		});
+
+		/*********************************************
+		 * Listen for clients
+		 *********************************************/
 		this.http_service = service
 
 		const bind = new Future();
