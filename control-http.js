@@ -26,7 +26,7 @@ class ExpressControlInterface {
 
 	is_running(){ return this.http_service != undefined }
 
-	start( port ) {
+	start( port, address = "localhost" ) {
 		port = port || 0
 		if( this.is_running() ) { return this.start_promise; }
 
@@ -286,8 +286,9 @@ class ExpressControlInterface {
 		this.http_service = service
 
 		const bind = new Future();
-		let listener = service.listen( port, () => {
-			let url = "http://localhost:" + listener.address().port
+		let listener = service.listen( port, address, () => {
+			const addr = listener.address();
+			let url = "http://" + addr.address + ":" + addr.port
 			console.log( "URL", url );
 			bind.accept( url );
 		})

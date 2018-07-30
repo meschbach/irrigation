@@ -5,8 +5,9 @@
  */
 
 let args = require( 'yargs' )
-	.option( 'port', { default: 9000 } )
-	.options( 'ttl', { description: 'Terminate the serivce after a set period of seconds.' } )
+	.option( 'ttl', { description: 'Terminate the serivce after a set period of seconds.' } )
+	.option( 'control-http-port', { default: 9000, alias: "port" } )
+	.option( 'control-http-ip', { description: 'IP address to listen to', alias: "ip", default: "127.0.0.1" })
 	.argv
 
 if( args.ttl ) {
@@ -20,7 +21,7 @@ if( args.ttl ) {
 let delta = require( "./index" )
 let service = new delta.Delta()
 
-service.start( args.port ).then( ( url ) => {
+service.start( args.port, args["control-listen-ip"] ).then( ( url ) => {
 	console.log( "Delta started: ", url )
 })
 

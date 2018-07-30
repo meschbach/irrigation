@@ -227,10 +227,10 @@ class Delta {
 	/**
 	 * Boots up the default ingress listener and attaches a handler for hearing control messages
 	 */
-	start( port ) {
+	start( port, device ) {
 		let controller = new ExpressControlInterface( this )
 		this.controlInterface = controller;
-		return controller.start( port )
+		return controller.start( port, device )
 	}
 
 	stop(){
