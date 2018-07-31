@@ -112,7 +112,7 @@ class DeltaClient {
 		}
 		const result = await promise_requests.put_json( this.url + "/v1/target-pool/" + inPool + "/target/" + name, {url: url}, this.authHeader);
 		const statusCode = result.headers.statusCode;
-		if( 200 > statusCode && statusCode >= 300 ){
+		if( !(200 <= statusCode && statusCode < 300) ){
 			throw new Error("Unexpected status: ", statusCode);
 		}
 		return result;
