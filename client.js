@@ -31,6 +31,10 @@ class DeltaClient {
 		return this.registerTarget("default", service_name + "-" + port, "http://localhost:" + port);
 	}
 
+	async describeIngress( name ) {
+		return new DeltaIngressResource(this.url + "/v1/ingress/"+name);
+	}
+
 	ingress( name = "default", port = 0, wire_proxy_name = "hand" ) {
 		if( !Number.isInteger( port ) ) { throw new Error( "Expected port to be a number, got: " + port ) }
 		if( port < 0 || 65535 < port ){ throw new Error("Port number is invalid: ", port ) }
