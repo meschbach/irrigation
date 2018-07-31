@@ -44,8 +44,8 @@ class ExpressControlInterface {
 		});
 		service.use( bodyParser.json() )
 
-		service.get( '/v1/ingress', ( req, resp ) => {
-			let ingress_points = this.delta.list_ingress()
+		service.a_get( '/v1/ingress', async ( req, resp ) => {
+			let ingress_points = await this.delta.list_ingress();
 			resp.json({ ingress: ingress_points })
 		})
 
