@@ -29,7 +29,7 @@ function ingress_list( args ){
 }
 
 function ingress_intake( args ){
-	configureClient( args ).ingress( args.port, args.handler ).then(
+	configureClient( args ).ingress( args.name, args.port, args.handler ).then(
 		( ingress ) => { console.log( { success: ingress } ) },
 		( error ) => { console.error( { error } ) }
 	)
@@ -76,6 +76,7 @@ let args = require( 'yargs' )
 		opts.command( "intake", "Binds a new ingress point", ( opts ) => {
 			opts.option( "port", { description: "The port to bind to", default: 0 } )
 			opts.option( "wire-proxy", { description: "Wire proxy handler to actually delegate the call", default: "hand" } )
+			opts.option( "name", {description: "Name of the ingress", default:"default"})
 		}, ingress_intake )
 		opts.command( "secure-intake", "Binds a new ingress point using TLS", ( opts ) => {
 			opts.option( "name", { description: "Ingress name", default: "default" } )
