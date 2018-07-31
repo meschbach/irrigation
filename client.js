@@ -154,6 +154,21 @@ class DeltaIngressResource {
 		this.cache = undefined
 	}
 
+	refresh() {
+		this.clear_cache()
+		this.retrieval = promise_requests.get_json( this.url ).then( ( response ) => {
+			this.loaded = true
+			this.cache = response
+		})
+		return this.retrieval
+	}
+
+	async ensureFresh(){
+		if( !this.loaded ){
+			await this.refresh();
+		}
+	}
+
 	/**
 	 * @deprecated
 	 * @param name
@@ -177,6 +192,11 @@ class DeltaIngressResource {
 			})
 	}
 
+	async describeRules( rules ){
+		await this.ensureFresh();
+		return this.cache.rules;
+	}
+
 	applyRules( rules ){
 		return promise_requests.put_json( this.url + "/routing", { rules } )
 			.then( ( result ) => {
@@ -184,15 +204,6 @@ class DeltaIngressResource {
 				if( result.headers.statusCode != 200 ){ throw new Error( result.headers.statusCode + " != 200" ) }
 				return this
 			})
-	}
-
-	refresh() {
-		this.clear_cache()
-		this.retrieval = promise_requests.get_json( this.url ).then( ( response ) => {
-			this.loaded = true
-			this.cache = response
-		})
-		return this.retrieval
 	}
 
 	/*

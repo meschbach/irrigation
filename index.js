@@ -106,7 +106,8 @@ class DeltaIngress {
 		this.wire_proxy = wire_proxy
 		this.serverSocket = serverSocket;
 
-		this.targetPoolRules = [];
+		this.rules = []; // Uncompiled version of the rules
+		this.targetPoolRules = []; //Compiled version of the rules
 	}
 
 	useDefaultPool( named ){
@@ -302,7 +303,7 @@ class Delta {
 		const description = await parallel(Object.keys( this.ingress_controllers ).map( async ( name ) => {
 			let ingress = this.ingress_controllers[ name ];
 			let addressURL = await ingress.listening;
-			let address = { name: name, address: addressURL, resolved: addressURL != undefined };
+			let address = { name: name, address: addressURL, resolved: addressURL != undefined, rules: this.ingress.rules };
 			return address
 		} ))
 		console.log(description);

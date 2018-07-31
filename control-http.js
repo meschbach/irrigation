@@ -99,7 +99,7 @@ class ExpressControlInterface {
 
 			ingress.listening.then( (address) => {
 				resp.statusCode = 200
-				resp.json({ address: address })
+				resp.json({ address: address, rules: ingress.rules })
 			});
 		} )
 
@@ -194,6 +194,7 @@ class ExpressControlInterface {
 						throw new Error("unsupported rule " + rule.type);
 				}
 			});
+			ingress.rules = rules;
 			ingress.targetPoolRules = targetPoolRules;
 			resp.json({ok: true});
 		} );
