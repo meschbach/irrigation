@@ -9,6 +9,10 @@ const fs = require( "fs" );
 function configureClient( args ){
 	let DeltaClient = require( './client' )
 	let client = new DeltaClient( args.service )
+
+	if( args.bearer ){
+		client.useBearerToken(args.bearer);
+	}
 	return client
 }
 
@@ -64,6 +68,7 @@ function configureCertificateCommmand( yargs ){
 
 let args = require( 'yargs' )
 	.usage( "$0 <command>" )
+	.option( 'bearer', { describe: "Bearer token to be attached to the client" } )
 	.option( 'service', { describe: 'URL to contact the service controller at', default: process.env.DELTA_ADDR || "http://localhost:9000" } )
 	.command( "status", 'checks status of system', ( opts ) => { }, statusCommand )
 	.command( "ingress", 'Operate or query ingress listeners', ( opts ) => {
