@@ -12,6 +12,7 @@ let url = require( 'url' )
 
 // Internal dependencies
 const Future = require("junk-bucket/future");
+const {parallel} = require("junk-bucket/future");
 
 let DeltaClient = require( './client' )
 let promise_post_json_request = require( './promise-requests' ).post_json
@@ -105,7 +106,8 @@ class DeltaIngress {
 		this.wire_proxy = wire_proxy
 		this.serverSocket = serverSocket;
 
-		this.targetPoolRules = [];
+		this.rules = []; // Uncompiled version of the rules
+		this.targetPoolRules = []; //Compiled version of the rules
 	}
 
 	useDefaultPool( named ){
@@ -297,13 +299,15 @@ class Delta {
 		return this.ingress_controllers[ name ]
 	}
 
-	list_ingress() {
-		return Object.keys( this.ingress_controllers ).map( ( name ) => {
-			let ingress = this.ingress_controllers[ name ]
-			let addressURL = ingress.listening.inspect().value
-			let address = { name: name, address: addressURL, resolved: addressURL != undefined }
+	async list_ingress() {
+		const description = await parallel(Object.keys( this.ingress_controllers ).map( async ( name ) => {
+			let ingress = this.ingress_controllers[ name ];
+			let addressURL = await ingress.listening;
+			let address = { name: name, address: addressURL, resolved: addressURL != undefined, rules: this.ingress.rules };
 			return address
-		} )
+		} ))
+		console.log(description);
+		return description;
 	}
 }
 

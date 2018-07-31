@@ -44,8 +44,8 @@ class ExpressControlInterface {
 		});
 		service.use( bodyParser.json() )
 
-		service.get( '/v1/ingress', ( req, resp ) => {
-			let ingress_points = this.delta.list_ingress()
+		service.a_get( '/v1/ingress', async ( req, resp ) => {
+			let ingress_points = await this.delta.list_ingress();
 			resp.json({ ingress: ingress_points })
 		})
 
@@ -99,7 +99,7 @@ class ExpressControlInterface {
 
 			ingress.listening.then( (address) => {
 				resp.statusCode = 200
-				resp.json({ address: address })
+				resp.json({ address: address, rules: ingress.rules })
 			});
 		} )
 
@@ -194,6 +194,7 @@ class ExpressControlInterface {
 						throw new Error("unsupported rule " + rule.type);
 				}
 			});
+			ingress.rules = rules;
 			ingress.targetPoolRules = targetPoolRules;
 			resp.json({ok: true});
 		} );

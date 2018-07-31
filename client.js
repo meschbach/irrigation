@@ -31,6 +31,10 @@ class DeltaClient {
 		return this.registerTarget("default", service_name + "-" + port, "http://localhost:" + port);
 	}
 
+	async describeIngress( name ) {
+		return new DeltaIngressResource(this.url + "/v1/ingress/"+name);
+	}
+
 	ingress( name = "default", port = 0, wire_proxy_name = "hand" ) {
 		if( !Number.isInteger( port ) ) { throw new Error( "Expected port to be a number, got: " + port ) }
 		if( port < 0 || 65535 < port ){ throw new Error("Port number is invalid: ", port ) }
@@ -87,21 +91,37 @@ class DeltaClient {
 	 * Target Pools
 	 ********/
 	async createTargetPool( name ){
+        if( !name ){
+            throw new Error("Pool name is required");
+        }
 		const result = await promise_requests.put_json( this.url + "/v1/target-pool/" + name, {}, 200, this.authHeader );
 		return result.body;
 	}
 
 	async describeTargetPool( name ){
+		if( !name ){
+			throw new Error("Pool name is required");
+		}
 		const result = await promise_requests.get_json( this.url + "/v1/target-pool/" + name, 200, this.authHeader  );
 		return result;
 	}
 
 	async registerTarget( inPool, name, url ) {
+		if( !inPool ){
+			throw new Error("Pool name is required");
+		}
 		const result = await promise_requests.put_json( this.url + "/v1/target-pool/" + inPool + "/target/" + name, {url: url}, this.authHeader);
+		const statusCode = result.headers.statusCode;
+		if( !(200 <= statusCode && statusCode < 300) ){
+			throw new Error("Unexpected status: ", statusCode);
+		}
 		return result;
 	}
 
 	async describeTarget( inPool, name ){
+		if( !inPool ){
+			throw new Error("Pool name is required");
+		}
 		const result = await promise_requests.get_json( this.url + "/v1/target-pool/" + inPool + "/target/" + name, 200, this.authHeader);
 		return result;
 	}
@@ -134,6 +154,21 @@ class DeltaIngressResource {
 		this.cache = undefined
 	}
 
+	refresh() {
+		this.clear_cache()
+		this.retrieval = promise_requests.get_json( this.url ).then( ( response ) => {
+			this.loaded = true
+			this.cache = response
+		})
+		return this.retrieval
+	}
+
+	async ensureFresh(){
+		if( !this.loaded ){
+			await this.refresh();
+		}
+	}
+
 	/**
 	 * @deprecated
 	 * @param name
@@ -157,6 +192,11 @@ class DeltaIngressResource {
 			})
 	}
 
+	async describeRules( rules ){
+		await this.ensureFresh();
+		return this.cache.rules;
+	}
+
 	applyRules( rules ){
 		return promise_requests.put_json( this.url + "/routing", { rules } )
 			.then( ( result ) => {
@@ -164,15 +204,6 @@ class DeltaIngressResource {
 				if( result.headers.statusCode != 200 ){ throw new Error( result.headers.statusCode + " != 200" ) }
 				return this
 			})
-	}
-
-	refresh() {
-		this.clear_cache()
-		this.retrieval = promise_requests.get_json( this.url ).then( ( response ) => {
-			this.loaded = true
-			this.cache = response
-		})
-		return this.retrieval
 	}
 
 	/*
