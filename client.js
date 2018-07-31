@@ -87,21 +87,37 @@ class DeltaClient {
 	 * Target Pools
 	 ********/
 	async createTargetPool( name ){
+        if( !name ){
+            throw new Error("Pool name is required");
+        }
 		const result = await promise_requests.put_json( this.url + "/v1/target-pool/" + name, {}, 200, this.authHeader );
 		return result.body;
 	}
 
 	async describeTargetPool( name ){
+		if( !name ){
+			throw new Error("Pool name is required");
+		}
 		const result = await promise_requests.get_json( this.url + "/v1/target-pool/" + name, 200, this.authHeader  );
 		return result;
 	}
 
 	async registerTarget( inPool, name, url ) {
+		if( !inPool ){
+			throw new Error("Pool name is required");
+		}
 		const result = await promise_requests.put_json( this.url + "/v1/target-pool/" + inPool + "/target/" + name, {url: url}, this.authHeader);
+		const statusCode = result.headers.statusCode;
+		if( 200 > statusCode && statusCode >= 300 ){
+			throw new Error("Unexpected status: ", statusCode);
+		}
 		return result;
 	}
 
 	async describeTarget( inPool, name ){
+		if( !inPool ){
+			throw new Error("Pool name is required");
+		}
 		const result = await promise_requests.get_json( this.url + "/v1/target-pool/" + inPool + "/target/" + name, 200, this.authHeader);
 		return result;
 	}
