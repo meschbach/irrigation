@@ -8,7 +8,6 @@
 let bodyParser = require('body-parser');
 let express = require( 'express' )
 let morgan = require( 'morgan' )
-let q = require( 'q' )
 let url = require( 'url' )
 
 // Internal dependencies

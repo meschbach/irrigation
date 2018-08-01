@@ -6,7 +6,6 @@ let express = require( 'express' )
 let http = require( 'http' )
 const https = require( 'https' );
 let morgan = require( 'morgan' )
-let q = require( 'q' )
 let request = require( 'request' )
 let url = require( 'url' )
 
