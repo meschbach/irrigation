@@ -15,7 +15,7 @@ Delegate=true
 MemoryMax=1G
 
 # Fetch the app (not strictly required, `rkt run` will fetch the image if there is not one)
-ExecStartPre=/usr/bin/rkt fetch --insecure-options=image docker://meschbach/irrigation
+ExecStartPre=/usr/bin/rkt fetch  --pull-policy=new --insecure-options=image docker://meschbach/irrigation
 # Start the app
 ExecStart=/usr/bin/rkt run --inherit-env --net=host docker://meschbach/irrigation --readonly-rootfs=true
 ExecStopPost=/usr/bin/rkt gc --mark-only
