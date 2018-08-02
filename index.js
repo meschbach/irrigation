@@ -254,7 +254,7 @@ class Delta {
 			console.log("Upgrade");
 			ingress.upgrade(request, socket, head);
 		});
-		let whenListening = http_promise_listen_url( server, 0 )
+		let whenListening = http_promise_listen_url( server, port )
 
 		let wire_factory = this.wire_proxy_factories[ wire_proxy_name || "hand" ]
 		if( !wire_factory ){ throw new Error( "No such wire proxy registered: " + wire_proxy_name ); }
