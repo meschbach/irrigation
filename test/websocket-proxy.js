@@ -8,16 +8,16 @@ let delta = require( "../index" )
 const {promiseEvent} = require("junk-bucket/future");
 const Future = require("junk-bucket/future");
 
+const {defaultNullLogger}  = require("../util-bunyan");
+
 describe( "When configuring an ingress for websockets", function() {
 	beforeEach(async function(){
 		const service = new WebSocket.Server({port:0});
 		this.targetMessage = new Future();
 		service.on('connection', (ws) => {
-			console.log("Connected");
 			this.connected = true;
 			ws.send("connected");
 			ws.on('message', (m) => {
-				console.log("message");
 				if( !this.targetMessage.resolved ) {
 					this.targetMessage.accept( m );
 				}
@@ -29,7 +29,8 @@ describe( "When configuring an ingress for websockets", function() {
 		this.targetPort = service.address().port;
 		this.targetService = service;
 
-		this.proxy = new delta.Delta();
+		//TODO: Use Irrigation facade
+		this.proxy = new delta.Delta( defaultNullLogger );
 
 		this.proxyControl = await this.proxy.start();
 		this.client = new DeltaClient( this.proxyControl );
@@ -47,7 +48,6 @@ describe( "When configuring an ingress for websockets", function() {
 
 	it( "relays the websocket connection", async function () {
 		const url = this.wsIngressURL;
-		console.log("Proxy url: " + url);
 		const ws = new WebSocket(url);
 		await promiseEvent(ws, "open");
 		expect(this.connected).to.be.true;
@@ -55,7 +55,6 @@ describe( "When configuring an ingress for websockets", function() {
 
 	it( "allows for the client to send the server a message", async function(){
 		const url = this.wsIngressURL;
-		console.log("Proxy url: " + url);
 		const ws = new WebSocket(url);
 		await promiseEvent(ws, "open");
 		const message = 'test';
@@ -66,7 +65,6 @@ describe( "When configuring an ingress for websockets", function() {
 
 	it( "allows the server to send the client a message", async function(){
 		const url = this.wsIngressURL;
-		console.log("Proxy url: " + url);
 		const ws = new WebSocket(url);
 		const resultPromise = promiseEvent(ws, "message")
 		await promiseEvent(ws, "open");

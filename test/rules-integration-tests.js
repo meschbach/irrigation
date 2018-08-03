@@ -29,6 +29,8 @@ class CallCountingService extends EventEmitter {
 	}
 }
 
+const {nullLogger} = require( "../util-bunyan" );
+
 describe("path routing", function(){
 	beforeEach( async function(){
 		this.targetA = new CallCountingService();
@@ -40,7 +42,7 @@ describe("path routing", function(){
 		this.defaultTarget = new CallCountingService();
 		const defaultTargetURL = await this.defaultTarget.start();
 
-		this.irrigation = new Irrigation();
+		this.irrigation = new Irrigation(nullLogger());
 		await this.irrigation.start();
 
 		const client = this.irrigation.client();

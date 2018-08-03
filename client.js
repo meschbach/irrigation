@@ -217,7 +217,6 @@ class DeltaIngressResource {
 	address() {
 		if( !this.retrieval ) { this.refresh() }
 		return this.retrieval.then( () => {
-			console.log( "Address request", this.cache )
 			return this.cache.address
 		})
 	}

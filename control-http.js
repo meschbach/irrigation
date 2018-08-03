@@ -35,7 +35,11 @@ class ExpressControlInterface {
 		if( this.is_running() ) { return this.start_promise; }
 
 		let service = make_async( express() )
-		service.use( morgan( 'short' ) )
+		service.use( morgan( 'short', {
+			stream: {write: (msg) => {
+				this.logger.info(msg);
+			} }
+		} ) )
 		service.use( (req,resp, next ) => {
 			if( this.authorizeRequests ){
 				this.authorizeRequests(req,resp,next);
@@ -370,11 +374,11 @@ class ExpressControlInterface {
 
 	stop() {
 		if (this.http_socket) {
-			console.info("Cleaning up HTTP socket");
+			this.logger.debug("Cleaning up HTTP socket");
 			this.http_socket.close()
 			this.http_socket = undefined
 		} else {
-			console.warn("Not bound, may leak");
+			this.logger.warn("Not bound, may leak");
 		}
 		this.http_service = undefined
 		this.start_promise = undefined

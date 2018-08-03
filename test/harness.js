@@ -2,10 +2,13 @@ const EventEmitter = require("events");
 const {Delta} = require("../index");
 const DeltaClient = require("../client");
 
+const {defaultNullLogger} = require( "../util-bunyan" );
+
 class Irrigation extends EventEmitter {
-	constructor(){
+	constructor( logger = defaultNullLogger ){
 		super();
-		this.proxy = new Delta();
+		this.logger = logger;
+		this.proxy = new Delta( logger );
 	}
 
 	async start(){

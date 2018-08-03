@@ -15,7 +15,7 @@ const {parallel} = require("junk-bucket/future");
 
 let DeltaClient = require( './client' )
 let promise_post_json_request = require( './promise-requests' ).post_json
-let ExpressControlInterface = require( './control-http' ).ExpressControlInterface
+let {ExpressControlInterface} = require( './control-http' )
 const { MemoryCertificateManager } = require( './certificate-manager' );
 
 function promise_get_request( url ) {
@@ -200,6 +200,7 @@ class NHPWireProxy {
 	}
 }
 
+const assert = require("assert");
 /*
  * Top level proxy system state manager
  */
@@ -251,7 +252,7 @@ class Delta {
 			this.logger.debug("Accepted request")
 			ingress.requested( request, response )
 		})
-		server.on("upgrade", function(request, socket, head){
+		server.on("upgrade", (request, socket, head) => {
 			this.logger.debug("Upgrade");
 			ingress.upgrade(request, socket, head);
 		});
