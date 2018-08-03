@@ -60,7 +60,7 @@ describe("given an instance of the system", function(){
 			await client.createTargetPool( "in-memory" );
 			const response = await client.describeTargetPool("in-memory");
 
-			expect(response.targetPool.targets).to.deep.eq([]);
+			expect(response.targetPool.targets).to.deep.eq({});
 		})
 	});
 
