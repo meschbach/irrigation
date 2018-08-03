@@ -66,6 +66,38 @@ function configureCertificateCommmand( yargs ){
 	yargs.command( "list", "lists the certificates which have been uploaded", (opts) => {}, listCertificates)
 }
 
+function configureTargetCommands( yargs ){
+	yargs.command("list", "Lists the pools", (y) => {}, (args) => {
+		configureClient( args ).listTargetPools()
+			.then( (pools) => { console.log(pools) },
+			(error) => { console.error(error) })
+	});
+	yargs.command("create <pool>", "Creates a given pool", (y) => {
+		y.positional("pool", {description: "The name to of the new target pool", default: "default"})
+	}, (args) => {
+		configureClient( args ).createTargetPool(args.pool)
+			.then( (pools) => { console.log(pools) },
+				(error) => { console.error(error) })
+	});
+	yargs.command("describe <pool>", "Creates a given pool", (y) => {
+		y.positional("pool", {description: "The name to of the new target pool", default: "default"})
+	}, (args) => {
+		configureClient( args ).describeTargetPool(args.pool)
+			.then( (pools) => { console.log(pools) },
+				(error) => { console.error(error) })
+	});
+
+	yargs.command("register <pool> <name> <uri>", "Creates a given pool", (y) => {
+		y.positional("pool", {description: "The name to of the new target pool", default: "default"})
+		y.positional("name", {description: "The name to of the new target pool", default: "default"})
+		y.positional("uri", {description: "The name to of the new target pool", default: "default"})
+	}, (args) => {
+		configureClient( args ).registerTarget(args.pool, args.name, args.uri)
+			.then( (results) => { console.log(results) },
+				(error) => { console.error(error) })
+	});
+}
+
 let args = require( 'yargs' )
 	.usage( "$0 <command>" )
 	.option( 'bearer', { describe: "Bearer token to be attached to the client" } )
@@ -85,6 +117,7 @@ let args = require( 'yargs' )
 			opts.option( "certificate",  { description: "Name of the certificate to use for the ingress", required: true } )
 		}, secure_ingress_intake )
 	}, showHelp )
+	.command( "targets", "Modifies target pools", configureTargetCommands, showHelp )
 	.command( "certificate", "Manages certificates within the internal store", configureCertificateCommmand, showHelp)
 	.help()
 

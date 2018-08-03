@@ -61,11 +61,15 @@ class SimpleTestService {
 			const ingress = await this.client.ingress("test",0,proxy_type);
 			await ingress.useDefaultPool("default");
 			this.ingressURL = await ingress.address();
-			console.log("Proxied ingress URL: ",this.ingressURL);
 		})
 		after( async function() {
 			await this.system.stop();
 			await this.subjectService.stop();
+		})
+
+		it( "shows the target as registered", async function() {
+			const pool = await this.client.describeTargetPool("default");
+			expect( pool.targetPool.targets ).to.have.key( "subject-under-test" );
 		})
 
 		describe( "For a GET 200 OK resource", function(){

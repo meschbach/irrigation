@@ -221,6 +221,15 @@ class ExpressControlInterface {
 		/*********************************************
 		 * Target Pool API
 		 *********************************************/
+		service.a_get( '/v1/target-pool', ( req, resp ) => {
+			const name = req.params.name;
+
+			const pools = this.delta.targetPools;
+			const names = Object.keys(pools);
+
+			resp.json({ ok: true, names: names })
+		});
+
 		service.a_put( '/v1/target-pool/:name', ( req, resp ) => {
 			const name = req.params.name;
 
@@ -230,8 +239,7 @@ class ExpressControlInterface {
 				return resp.sendStatus(409, "Already exists");
 			}
 
-			console.log("Creating target pool: ", name);
-			pools[name] = { targets: [] };
+			pools[name] = { targets: {} };
 			resp.json({ ok: true })
 		});
 
@@ -243,8 +251,12 @@ class ExpressControlInterface {
 			if( !pool ) {
 				return resp.sendStatus(404);
 			}
+			const entity = {
+				ok: true,
+				targetPool: pool
+			}
 
-			resp.json({ ok: true, targetPool: pool })
+			resp.json( entity )
 		});
 
 		service.a_put( '/v1/target-pool/:pool/target/:name', ( req, resp ) => {
@@ -270,7 +282,6 @@ class ExpressControlInterface {
 				url: url,
 				inService: true
 			}
-			console.log("Registering ", targetName, " in ", poolName, " to URL ", url);
 
 			resp.json({ ok: true, targetPool: pool })
 		});

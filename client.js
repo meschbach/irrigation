@@ -90,6 +90,11 @@ class DeltaClient {
 	/*******
 	 * Target Pools
 	 ********/
+	async listTargetPools(){
+		const result = await promise_requests.get_json( this.url + "/v1/target-pool", 200, this.authHeader  );
+		return result;
+	}
+
 	async createTargetPool( name ){
         if( !name ){
             throw new Error("Pool name is required");
@@ -115,7 +120,7 @@ class DeltaClient {
 		if( !(200 <= statusCode && statusCode < 300) ){
 			throw new Error("Unexpected status: ", statusCode);
 		}
-		return result;
+		return result.body;
 	}
 
 	async describeTarget( inPool, name ){
