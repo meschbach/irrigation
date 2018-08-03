@@ -27,14 +27,14 @@ function promise_get_request( url ) {
 	return future.promised;
 }
 
-function http_promise_listen_url( service, port ){
+function http_promise_listen_url( service, port, logger ){
 	const future = new Future();
-	console.log( "Awaiting listener" )
+	logger.info( "Awaiting listener" )
 	let listener = service.listen( port, () => {
 		let host = "localhost"
 		//let host = listener.address().address
 		let url = "http://" + host + ":" + listener.address().port
-		console.log("Listneing on ", url)
+		logger.info("Listneing on ", url)
 		future.accept( url )
 	})
 	return future.promised;
@@ -44,10 +44,10 @@ function http_promise_listen_url( service, port ){
  * Produces intsnaces of the hand rolled proxier
  */
 class HandRolledProxierProducer {
-	constructor(){ }
+	constructor( logger ){ this.logger = logger }
 
 	produce( details ) {
-		return  new HandRolledProxier()
+		return  new HandRolledProxier( this.logger.child({proxy: "hand-rolled"}) )
 	}
 }
 
@@ -55,14 +55,14 @@ class HandRolledProxierProducer {
  * Attempt to write a proxier myself.
  */
 class HandRolledProxier {
-	constructor(){ }
+	constructor( logger ){  this.logger = logger; }
 
 	proxy( target, request, response ){
 			let agent = new http.Agent({ keepAlive: false })
 			const url = new URL(target.url);
 			const host = url.hostname;
 			const port = url.port;
-			console.log( "Requesting ", target, host, port, request.method, request.url )
+			this.logger.info( "Requesting ", {target, host, port, method: request.method, resource: request.url} )
 			let req = http.request({
 				host: host,
 				method: request.method,
@@ -72,12 +72,12 @@ class HandRolledProxier {
 				headers: request.headers,
 				agent: agent
 			}, ( targetResp ) => {
-				console.log( "Response received" )
+				this.logger.debug( "Response received" )
 				response.statusCode = targetResp.statusCode
 				targetResp.pipe( response )
 			})
 			req.on( 'error', ( problem ) => {
-				console.log( "Error: ", problem )
+				this.logger.error( "Error: ", problem )
 				response.statusCode = 503;
 				response.end();
 			})
@@ -96,7 +96,9 @@ class DeltaIngress {
 	/*
 	 * @param mesh locates the best target to utilize
 	 */
-	constructor( listening, mesh, wire_proxy, serverSocket ){
+	constructor( logger, listening, mesh, wire_proxy, serverSocket ){
+		this.logger = logger;
+
 		if( !listening ){ throw new Error("listening required") }
 		if( !mesh ){ throw new Error("mesh required") }
 		this.listening = listening
@@ -117,32 +119,24 @@ class DeltaIngress {
 		this.serverSocket.close();
 	}
 
-	/**
-	 * @deprecated
-	 * @param name
-	 */
-	target( name ) {
-		console.log( "Registering target ", name );
-		this.targets.push( name )
-	}
-
+	//TODO: Requested and upgrade shouldn't duplicate code
 	requested( request, response ){
 		//TODO: This structure can be improved for performance
 		const targetPoolName = this.targetPoolRules.reduce( (pool, f) => {
 			return f(pool, request)
 		}, this.defaultPool);
 
-		console.log("Resolve target pool too: ", targetPoolName);
+		this.logger.info("Resolve target pool too: ", targetPoolName);
 		const targetPool = this.mesh.targetPools[targetPoolName] || {};
-		console.log("Pool: ", this.mesh.targetPools);
+		this.logger.info("Pool: ", this.mesh.targetPools);
 		const targets = Object.values(targetPool.targets || {});
 		if( targets.length == 0 ){
-			console.log( "No targets found." )
+			this.logger.warn( "No targets found.", {targetPoolName} )
 			response.statusCode = 503
 			response.end()
 		} else {
 			const target = targets[0];
-			console.log( "Dispatching to ", targets, target )
+			this.logger.info( "Dispatching to ", targets, target )
 			this.wire_proxy.proxy( target, request, response )
 		}
 	}
@@ -152,12 +146,12 @@ class DeltaIngress {
 		const targetPool = this.mesh.targetPools[this.defaultPool] || {};
 		const targets = Object.values(targetPool.targets || {});
 		if( targets.length == 0 ){
-			console.log( "No targets found." )
+			this.logger.warn( "No targets found in pool",  {targetPool: this.defaultPool })
 			response.statusCode = 503
 			response.end()
 		} else {
 			const target = targets[0];
-			console.log( "Dispatching to ", targets, target )
+			this.logger.debug( "Dispatching to ", {targets, target} )
 			this.wire_proxy.upgrade( target, request, socket, head )
 		}
 	}
@@ -177,29 +171,31 @@ class DeltaTarget {
  * Node HTTP Proxy
  */
 class NHPFactory {
-	constructor( nhp ){
+	constructor( logger, nhp ){
+		this.logger = logger;
 		if( !nhp ){ throw new Error( "node-http-proxy must be defined." ); }
 		this.nhp = nhp
 	}
 
 	produce( details ){
 		let proxy = this.nhp.createProxyServer( {} )
-		return new NHPWireProxy( proxy )
+		return new NHPWireProxy( this.logger, proxy )
 	}
 }
 
 class NHPWireProxy {
-	constructor( proxy ){
+	constructor( logger, proxy ){
+		this.logger = logger;
 		this.wire = proxy
 	}
 
 	proxy( target, request, response ){
-		console.log("Proxying ", target);
+		this.logger.debug("Proxying ", target);
 		this.wire.web( request, response, { target: target.url } )
 	}
 
 	upgrade( target, request, socket, head ){
-		console.log("Upgrading ", target);
+		this.logger.debug("Upgrading ", target);
 		this.wire.ws(request, socket, head, {target: target.url });
 	}
 }
@@ -208,17 +204,19 @@ class NHPWireProxy {
  * Top level proxy system state manager
  */
 class Delta {
-	constructor() {
+	constructor( logger ) {
+		this.logger = logger;
+
 		this.ingress_controllers = {}
 		this.targets = {}
 
 		this.wire_proxy_factories = {}
-		this.wire_proxy_factories[ 'hand' ] = new HandRolledProxierProducer()
+		this.wire_proxy_factories[ 'hand' ] = new HandRolledProxierProducer( this.logger )
 		try {
 			let httpProxy = require( 'http-proxy' )
-			this.wire_proxy_factories[ 'node-http-proxy' ] = new NHPFactory( httpProxy )
+			this.wire_proxy_factories[ 'node-http-proxy' ] = new NHPFactory( this.logger, httpProxy )
 		} catch( e ) {
-			console.log( "Not registering http-proxy wire factory because not found" )
+			logger.info( "Not registering http-proxy wire factory because not found" )
 		}
 
 		this.certificateManager = new MemoryCertificateManager();
@@ -228,13 +226,17 @@ class Delta {
 	/**
 	 * Boots up the default ingress listener and attaches a handler for hearing control messages
 	 */
-	start( port, device ) {
-		let controller = new ExpressControlInterface( this )
+	start( port, iface ) {
+		this.logger.info( "Starting new HTTP service", {port,iface} );
+
+		let controller = new ExpressControlInterface( this, this.logger.child({component: "http-api", port, iface}))
 		this.controlInterface = controller;
-		return controller.start( port, device )
+		return controller.start( port, iface )
 	}
 
 	stop(){
+		this.logger.info( "Shutting down");
+
 		this.controlInterface.stop();
 		Object.values(this.ingress_controllers).forEach((controller) => {
 			controller.end();
@@ -246,20 +248,20 @@ class Delta {
 	 */
 	ingress( name, port, wire_proxy_name ) {
 		let server = new http.Server( ( request, response ) => {
-			console.log("Accepted request")
+			this.logger.debug("Accepted request")
 			ingress.requested( request, response )
 		})
 		server.on("upgrade", function(request, socket, head){
-			console.log("Upgrade");
+			this.logger.debug("Upgrade");
 			ingress.upgrade(request, socket, head);
 		});
-		let whenListening = http_promise_listen_url( server, port )
+		let whenListening = http_promise_listen_url( server, port, this.logger.child({promise: "ingress-url"}) )
 
 		let wire_factory = this.wire_proxy_factories[ wire_proxy_name || "hand" ]
 		if( !wire_factory ){ throw new Error( "No such wire proxy registered: " + wire_proxy_name ); }
 
 		let wire_proxy = wire_factory.produce( {} )
-		const ingress = new DeltaIngress( whenListening, this, wire_proxy, server )
+		const ingress = new DeltaIngress( this.logger.child({ingress: name, port: port}), whenListening, this, wire_proxy, server )
 		this.ingress_controllers[ name ] = ingress
 		return ingress
 	}
@@ -276,7 +278,7 @@ class Delta {
 		server.on("upgrade", function(request, socket, head){
 			ingress.upgrade(request, socket, head);
 		});
-		let whenListening = http_promise_listen_url( server, port )
+		let whenListening = http_promise_listen_url( server, port, this.logger.child({promise: "ingress-url"}) )
 
 		let wire_factory = this.wire_proxy_factories[ wire_proxy_name || "hand" ]
 		if( !wire_factory ){ throw new Error( "No such wire proxy registered: " + wire_proxy_name ); }
@@ -305,7 +307,6 @@ class Delta {
 			let address = { name: name, address: addressURL, resolved: addressURL != undefined, rules: this.ingress.rules };
 			return address
 		} ))
-		console.log(description);
 		return description;
 	}
 }

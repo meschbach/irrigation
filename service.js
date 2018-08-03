@@ -12,16 +12,20 @@ let args = require( 'yargs' )
 
 if( args.ttl ) {
 	setTimeout( () => {
-		console.error( "TTL expired after " + args.ttl + " seconds." );
+		rootLogger.info( "TTL expired after " + args.ttl + " seconds." );
 		process.exit( 1 );
 	}, args.ttl * 1000 )
 }
 
+const bunyan = require("bunyan");
+const bunyanFormat = require("bunyan-format");
+const formattedLogger = bunyanFormat({outputMode: 'short'});
+const rootLogger = bunyan.createLogger({name: "irrigation", stream: formattedLogger, level: 'debug'});
 
 let delta = require( "./index" )
-let service = new delta.Delta()
+let service = new delta.Delta( rootLogger );
 
 service.start( args.port, args["control-listen-ip"] ).then( ( url ) => {
-	console.log( "Delta started: ", url )
+	rootLogger.info( "Delta started: ", url )
 })
 

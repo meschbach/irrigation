@@ -21,7 +21,9 @@ const jwt = require("jsonwebtoken");
  * Control Plane
  */
 class ExpressControlInterface {
-	constructor( delta ) {
+	constructor( delta, logger ) {
+		this.logger = logger;
+
 		this.delta = delta
 		this.authorizeRequests = undefined;
 	}
@@ -69,12 +71,12 @@ class ExpressControlInterface {
 				resp.statusCode = 422;
 				return resp.json( { errors: {certificateName: ["Must be defined"]}} );
 			}
-			console.log("Validated request; looks reasonable")
+			this.logger.info("Validated request; looks reasonable")
 
 			// Perform opertaion
 			let ingress;
 			if( scheme == "https") {
-				console.log("Certificate name ", certificateName);
+				this.logger.info("Certificate name ", certificateName);
 				ingress = this.delta.secureIngress( name, port, wire_proxy, certificateName )
 			} else {
 				ingress = this.delta.ingress( name, port, wire_proxy )
@@ -82,7 +84,7 @@ class ExpressControlInterface {
 			let completion = wait ? ingress.listening : Promise.resolve( port )
 			const boundPort = await completion;
 
-			console.log( "Bound port: ", boundPort )
+			this.logger.info( "Bound port: ", boundPort )
 			resp.statusCode = 201
 			//let scheme = req.get( "scheme" )
 			resp.json( { _self: scheme + "://" + req.get("host") + "/v1/ingress/" + name } )
@@ -107,7 +109,7 @@ class ExpressControlInterface {
 			let ingress_name = req.params.name
 			let targets = req.body.add_targets
 
-			console.log( "delta-d: Requested to use ", targets, " with ", ingress_name )
+			this.logger.info( "delta-d: Requested to use ", targets, " with ", ingress_name )
 
 			if( !targets ) {
 				resp.statusCode = 422;
@@ -121,7 +123,7 @@ class ExpressControlInterface {
 			}
 
 			targets.forEach( ( target ) => {
-				console.log( "delta-d: Registering ", target, " with ", ingress_name )
+				this.logger.info( "delta-d: Registering ", target, " with ", ingress_name )
 				ingress.target( target )
 			})
 
@@ -133,7 +135,7 @@ class ExpressControlInterface {
 			let ingress_name = req.params.name
 			let defaultPool = req.body.defaultPool
 
-			console.log( "delta-d: Requested to use pool ", defaultPool, " with ", ingress_name )
+			this.logger.info( "delta-d: Requested to use pool ", defaultPool, " with ", ingress_name )
 
 			if( !defaultPool ) {
 				resp.statusCode = 422;
@@ -271,7 +273,7 @@ class ExpressControlInterface {
 			const pools = this.delta.targetPools;
 			const pool = pools[poolName];
 			if( !pool ) {
-				console.log("No such pool");
+				this.logger.info("No such pool");
 				return resp.sendStatus(404);
 			}
 
@@ -293,12 +295,12 @@ class ExpressControlInterface {
 			const pools = this.delta.targetPools;
 			const pool = pools[poolName];
 			if( !pool ) {
-				console.log("No Such pool", poolName, pools);
+				this.logger.info("No Such pool", poolName, pools);
 				return resp.sendStatus(404);
 			}
 
 			if( !pool.targets[targetName] ){
-				console.log("No such target pool", poolName, targetName, pool);
+				this.logger.info("No such target pool", poolName, targetName, pool);
 				return resp.sendStatus(404);
 			}
 			resp.json({ ok: true, target: pool.targets[targetName] })
@@ -312,7 +314,7 @@ class ExpressControlInterface {
 		});
 
 		service.a_put("/v1/jwt", (req, resp) => {
-			console.log("Installing JWT key");
+			this.logger.info("Installing JWT key");
 			const base64Key = req.body.symmetricSecret;
 			if( !base64Key ){
 				return resp.status(422).end();
@@ -357,7 +359,7 @@ class ExpressControlInterface {
 		let listener = service.listen( port, address, () => {
 			const addr = listener.address();
 			let url = "http://" + addr.address + ":" + addr.port
-			console.log( "URL", url );
+			this.logger.info( "URL", url );
 			bind.accept( url );
 		})
 		this.http_socket = listener;
