@@ -25,7 +25,7 @@ const rootLogger = bunyan.createLogger({name: "irrigation", stream: formattedLog
 let delta = require( "./index" )
 let service = new delta.Delta( rootLogger );
 
-service.start( args.port, args["control-listen-ip"] ).then( ( url ) => {
+service.start( args.port, args["control-http-ip"] ).then( ( url ) => {
 	rootLogger.info( "Delta started: ", url )
 })
 
