@@ -8,12 +8,10 @@
 let bodyParser = require('body-parser');
 let express = require( 'express' )
 let morgan = require( 'morgan' )
-let url = require( 'url' )
 
 // Internal dependencies
 const Future = require("junk-bucket/future");
 const {make_async} = require("junk-bucket/express");
-let express_extensions = require( './express-extensions' )
 
 const jwt = require("jsonwebtoken");
 
