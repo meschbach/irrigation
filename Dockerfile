@@ -11,3 +11,4 @@ EXPOSE 9000
 EXPOSE 9001
 EXPOSE 9002
 ENTRYPOINT ["node", "service.js"]
+CMD ["--control-http-ip", "0.0.0.0"]
