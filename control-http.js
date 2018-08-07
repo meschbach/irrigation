@@ -17,6 +17,8 @@ let express_extensions = require( './express-extensions' )
 
 const jwt = require("jsonwebtoken");
 
+const {RoundRobinScheduler} = require("./service/round-robin");
+
 /*
  * Control Plane
  */
@@ -245,7 +247,7 @@ class ExpressControlInterface {
 				return resp.sendStatus(409, "Already exists");
 			}
 
-			pools[name] = { targets: {} };
+			pools[name] = { targets: {}, loadBalancer: new RoundRobinScheduler() };
 			resp.json({ ok: true })
 		});
 
@@ -260,7 +262,7 @@ class ExpressControlInterface {
 			const entity = {
 				ok: true,
 				targetPool: pool
-			}
+			};
 
 			resp.json( entity )
 		});
@@ -288,6 +290,7 @@ class ExpressControlInterface {
 				url: url,
 				inService: true
 			}
+			pool.loadBalancer.addTarget(targetName);
 
 			resp.json({ ok: true, targetPool: pool })
 		});
@@ -307,6 +310,23 @@ class ExpressControlInterface {
 				this.logger.info("No such target pool", poolName, targetName, pool);
 				return resp.sendStatus(404);
 			}
+			resp.json({ ok: true, target: pool.targets[targetName] })
+		});
+
+		service.a_delete( '/v1/target-pool/:pool/target/:name', ( req, resp ) => {
+			const poolName = req.params.pool;
+			const targetName = req.params.name;
+
+			const pools = this.delta.targetPools;
+			const pool = pools[poolName];
+			if( !pool ) {
+				this.logger.info("No Such pool", poolName, pools);
+				return resp.sendStatus(404);
+			}
+
+			const targets = pool.targets;
+			delete targets[targetName];
+			pool.loadBalancer.removeTarget(targetName);
 			resp.json({ ok: true, target: pool.targets[targetName] })
 		});
 
@@ -357,12 +377,12 @@ class ExpressControlInterface {
 		/*********************************************
 		 * Listen for clients
 		 *********************************************/
-		this.http_service = service
+		this.http_service = service;
 
 		const bind = new Future();
 		let listener = service.listen( port, address, () => {
 			const addr = listener.address();
-			let url = "http://" + addr.address + ":" + addr.port
+			let url = "http://" + addr.address + ":" + addr.port;
 			this.logger.info( "URL", url );
 			bind.accept( url );
 		})

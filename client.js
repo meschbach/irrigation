@@ -5,11 +5,14 @@
  */
 
 // Internal dependencies
-let promise_requests = require( './promise-requests' )
+let promise_requests = require( './promise-requests' );
+const rp = require("request-promise-native");
+
+const assert = require("assert");
 
 class DeltaClient {
 	constructor( controlURL ) {
-		this.url = controlURL
+		this.url = controlURL;
 		this.authHeader = undefined;
 	}
 
@@ -112,9 +115,10 @@ class DeltaClient {
 	}
 
 	async registerTarget( inPool, name, url ) {
-		if( !inPool ){
-			throw new Error("Pool name is required");
-		}
+		assert(inPool);
+		assert(name);
+		assert(url);
+
 		const result = await promise_requests.put_json( this.url + "/v1/target-pool/" + inPool + "/target/" + name, {url: url}, this.authHeader);
 		const statusCode = result.headers.statusCode;
 		if( !(200 <= statusCode && statusCode < 300) ){
@@ -129,6 +133,19 @@ class DeltaClient {
 		}
 		const result = await promise_requests.get_json( this.url + "/v1/target-pool/" + inPool + "/target/" + name, 200, this.authHeader);
 		return result;
+	}
+
+	async removeTarget( inPool, name ){
+		assert(inPool);
+		const req = {
+			method: "DELETE",
+			url: this.url + "/v1/target-pool/" +inPool+ "/target/" + name
+		}
+
+		if( this.authHeader ){
+			req["Authorization"] = this.authHeader;
+		}
+		return await rp(req);
 	}
 
 	/*******

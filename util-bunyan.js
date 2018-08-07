@@ -13,7 +13,17 @@ function nullLogger(){
 
 const defaultNullLogger = nullLogger();
 
+const bunyan = require("bunyan");
+const bunyanFormat = require("bunyan-format");
+
+function formattedLogger( appName ){
+	const formattedLogger = bunyanFormat({outputMode: 'short'});
+	const rootLogger = bunyan.createLogger({name: appName, stream: formattedLogger, level: 'debug'});
+	return rootLogger
+}
+
 module.exports = {
 	nullLogger,
-	defaultNullLogger
+	defaultNullLogger,
+	formattedLogger
 }
