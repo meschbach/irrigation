@@ -116,17 +116,16 @@ let args = require( 'yargs' )
 			opts.option( "wire-proxy", { description: "Wire proxy handler to actually delegate the call", default: "hand" } )
 			opts.option( "certificate",  { description: "Name of the certificate to use for the ingress", required: true } )
 		}, secure_ingress_intake )
+		opts.demandCommand()
 	}, showHelp )
 	.command( "targets", "Modifies target pools", configureTargetCommands, showHelp )
 	.command( "certificate", "Manages certificates within the internal store", configureCertificateCommmand, showHelp)
-	.help()
+	.demandCommand()
+	.help();
 
 function showHelp(){
 	args.showHelp();
 }
 
 
-let argv = args.argv
-
-if( argv._.length == 0 ){ showHelp() }
-
+let argv = args.argv;
