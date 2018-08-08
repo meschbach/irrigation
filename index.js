@@ -183,12 +183,24 @@ class Delta {
 	 */
 	ingress( name, port, wire_proxy_name ) {
 		let server = new http.Server( ( request, response ) => {
-			this.logger.debug("Accepted request")
-			ingress.requested( request, response )
-		})
+			try {
+				ingress.requested(request, response)
+			} catch(e) {
+				this.logger.error("Failed to dispatch request", e);
+				response.statusCode = 543;
+				response.statusMessage = "Internal proxy error";
+				response.write("An internal proxy error occurred so the request may not be completed.");
+				response.end();
+			}
+		});
 		server.on("upgrade", (request, socket, head) => {
-			this.logger.debug("Upgrade");
-			ingress.upgrade(request, socket, head);
+			try {
+				this.logger.debug("Upgrade");
+				ingress.upgrade(request, socket, head);
+			} catch(e) {
+				this.logger.error("Failed to upgrade socket", e);
+				socket.close();
+			}
 		});
 		let whenListening = http_promise_listen_url( server, port, this.logger.child({promise: "ingress-url"}) )
 
