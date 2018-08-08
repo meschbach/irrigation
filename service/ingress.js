@@ -19,6 +19,7 @@ class DeltaIngress {
 
 		this.rules = []; // Uncompiled version of the rules
 		this.targetPoolRules = []; //Compiled version of the rules
+		this.defaultPool = "default";
 	}
 
 	useDefaultPool( named ){
@@ -35,10 +36,10 @@ class DeltaIngress {
 		const targetPoolName = this.targetPoolRules.reduce( (pool, f) => {
 			return f(pool, request)
 		}, this.defaultPool);
+		this.logger.debug("Target pool name: ", targetPoolName);
 
-		// this.logger.debug("Resolve target pool too: ", targetPoolName);
 		const targetPool = this.mesh.targetPools[targetPoolName] || {};
-		// this.logger.debug("Pool: ", this.mesh.targetPools);
+		this.logger.debug("Pool: ", targetPool);
 		const targets = targetPool.targets || {};
 
 		if( targets.length == 0 ){
@@ -46,11 +47,16 @@ class DeltaIngress {
 			response.statusCode = 503;
 			response.end()
 		} else {
+			const lb = targetPool.loadBalancer;
+			if(lb.isEmpty) {
+				response.statusCode = 503;
+				response.end("No targets in the pool " + targetPoolName);
+				return;
+			}
+
 			const targetName = targetPool.loadBalancer.next();
-			this.logger.debug( "Dispatching to name", targetName);
 			const target = targets[targetName];
 			assert(target);
-			// this.logger.debug( "Dispatching to ", targets, target );
 			this.wire_proxy.proxy( target, request, response )
 		}
 	}

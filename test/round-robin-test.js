@@ -14,10 +14,24 @@ describe("RoundRobin scheduler", function(){
 		this.scheduler = new RoundRobinScheduler();
 	});
 
+	describe("without targets", function(){
+		it("is empty", function(){
+			expect( this.scheduler.isEmpty ).to.eq(true);
+		});
+
+		it("gives only undefined", function(){
+			expect( this.scheduler.next() ).to.eq(undefined);
+		});
+	});
+
 	describe("when configured with only one target", function(){
 		beforeEach(function(){
 			this.target = {};
 			this.scheduler.addTarget(this.target);
+		});
+
+		it("isn't empty", function(){
+			expect(this.scheduler.isEmpty).to.eq(false);
 		});
 
 		describe("on 1st request", function(){

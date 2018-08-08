@@ -14,10 +14,12 @@ class RoundRobinScheduler {
 		this.targets = this.targets.filter( (t) => t != target );
 	}
 
+	get isEmpty(){
+		return this.targets.length == 0;
+	}
+
 	next(){
-		if( this.targets.length == 0 ){
-			throw new Error("No targets");
-		}
+		if( this.targets.length == 0 ){ return undefined; }
 		if( this.index >= this.targets.length ){
 			this.index = 0;
 		}

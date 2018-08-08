@@ -189,8 +189,7 @@ class Delta {
 				this.logger.error("Failed to dispatch request", e);
 				response.statusCode = 543;
 				response.statusMessage = "Internal proxy error";
-				response.write("An internal proxy error occurred so the request may not be completed.");
-				response.end();
+				response.end("An internal proxy error occurred so the request may not be completed.");
 			}
 		});
 		server.on("upgrade", (request, socket, head) => {
