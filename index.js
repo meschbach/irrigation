@@ -255,6 +255,16 @@ class Delta {
 		} ))
 		return description;
 	}
+
+	deleteIngress( name ){
+		this.logger.info("Deleting ingress controller ", name);
+		const ingress = this.ingress_controllers[ name ];
+		if( !ingress ){ return false; }
+
+		ingress.end();
+		delete this.ingress_controllers[name];
+		return true;
+	}
 }
 
 exports.Delta = Delta

@@ -98,6 +98,12 @@ function configureTargetCommands( yargs ){
 	});
 }
 
+function deleteIngress( args ){
+	configureClient( args )
+		.deleteIngress( args.name )
+		.then( (results) => console.log(results), (error) => console.error("Error: ", error ) );
+}
+
 let args = require( 'yargs' )
 	.usage( "$0 <command>" )
 	.option( 'bearer', { describe: "Bearer token to be attached to the client" } )
@@ -109,13 +115,16 @@ let args = require( 'yargs' )
 			opts.option( "port", { description: "The port to bind to", default: 0 } )
 			opts.option( "wire-proxy", { description: "Wire proxy handler to actually delegate the call", default: "hand" } )
 			opts.option( "name", {description: "Name of the ingress", default:"default"})
-		}, ingress_intake )
+		}, ingress_intake );
 		opts.command( "secure-intake", "Binds a new ingress point using TLS", ( opts ) => {
 			opts.option( "name", { description: "Ingress name", default: "default" } )
 			opts.option( "port", { description: "The port to bind to", default: 0 } )
 			opts.option( "wire-proxy", { description: "Wire proxy handler to actually delegate the call", default: "hand" } )
 			opts.option( "certificate",  { description: "Name of the certificate to use for the ingress", required: true } )
-		}, secure_ingress_intake )
+		}, secure_ingress_intake );
+		opts.command( "delete <name>", "Deletes the given ingress point", function(opts){
+			opts.positional("name", {description: "name of intake to be deleted"});
+		}, deleteIngress );
 		opts.demandCommand()
 	}, showHelp )
 	.command( "targets", "Modifies target pools", configureTargetCommands, showHelp )

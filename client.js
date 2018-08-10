@@ -72,6 +72,18 @@ class DeltaClient {
 		return new DeltaIngressResource( result.body._self, this.authHeader )
 	}
 
+	async deleteIngress( name ) {
+		const req = {
+			method: "DELETE",
+			url: this.url + "/v1/ingress/" + name
+		};
+		if( this.authHeader ){
+			req["Authorization"] = this.authHeader;
+		}
+
+		return await rp( req );
+	}
+
 	ingress_all() { return promise_requests.get_json( this.url + "/v1/ingress", 200, this.authHeader  ) }
 
 	status() {

@@ -108,6 +108,18 @@ class ExpressControlInterface {
 			});
 		} )
 
+		service.delete( '/v1/ingress/:name', ( req, resp ) => {
+			let name = req.params.name;
+			let result = this.delta.deleteIngress(name);
+			if( !result ){
+				resp.statusCode = 404;
+				resp.end();
+			} else {
+				resp.statusCode = 204;
+				resp.end();
+			}
+		} );
+
 		//TODO: Deprecated in 0.3 series
 		service.a_post( '/v1/ingress/:name', ( req, resp ) => {
 			let ingress_name = req.params.name
