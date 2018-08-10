@@ -45,7 +45,8 @@ class DeltaIngress {
 		if( targets.length == 0 ){
 			this.logger.warn( "No targets found.", {targetPoolName} );
 			response.statusCode = 503;
-			response.end()
+			response.setHeader("Content-Type","text/plain");
+			response.end("No targets found.");
 		} else {
 			const lb = targetPool.loadBalancer;
 			if(lb.isEmpty) {
@@ -66,12 +67,12 @@ class DeltaIngress {
 		const targetPool = this.mesh.targetPools[this.defaultPool] || {};
 		const targets = Object.values(targetPool.targets || {});
 		if( targets.length == 0 ){
-			this.logger.warn( "No targets found in pool",  {targetPool: this.defaultPool })
-			response.statusCode = 503
+			this.logger.warn( "No targets found in pool",  {targetPool: this.defaultPool });
+			response.statusCode = 503;
 			response.end()
 		} else {
 			const target = targets[0];
-			this.logger.debug( "Dispatching to ", {targets, target} )
+			this.logger.debug( "Dispatching to ", {targets, target} );
 			this.wire_proxy.upgrade( target, request, socket, head )
 		}
 	}
