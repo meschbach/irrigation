@@ -25,5 +25,6 @@ function formattedLogger( appName ){
 module.exports = {
 	nullLogger,
 	defaultNullLogger,
-	formattedLogger
+	formattedLogger,
+	formattedConsoleLog: formattedLogger
 }

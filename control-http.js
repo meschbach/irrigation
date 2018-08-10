@@ -390,13 +390,17 @@ class ExpressControlInterface {
 		this.http_service = service;
 
 		const bind = new Future();
-		let listener = service.listen( port, address, () => {
-			const addr = listener.address();
-			let url = "http://" + addr.address + ":" + addr.port;
-			this.logger.info( "URL", url );
-			bind.accept( url );
-		})
-		this.http_socket = listener;
+		try {
+			let listener = service.listen( port, address, () => {
+				const addr = listener.address();
+				let url = "http://" + addr.address + ":" + addr.port;
+				this.logger.info( "URL", url);
+				bind.accept( url );
+			})
+			this.http_socket = listener;
+		} catch(e){
+			bind.reject( e );
+		}
 
 		this.start_promise = bind.promised;
 		return this.start_promise

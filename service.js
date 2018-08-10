@@ -4,6 +4,10 @@
  * Service Container
  */
 
+const delta = require( "./index" );
+//TODO: To be moved to junk-bucket
+const { service  } = require("./util-service");
+
 let args = require( 'yargs' )
 	.option( 'ttl', { description: 'Terminate the serivce after a set period of seconds.' } )
 	.option( 'control-http-port', { default: 9000, alias: "port" } )
@@ -17,15 +21,11 @@ if( args.ttl ) {
 	}, args.ttl * 1000 )
 }
 
-const bunyan = require("bunyan");
-const bunyanFormat = require("bunyan-format");
-const formattedLogger = bunyanFormat({outputMode: 'short'});
-const rootLogger = bunyan.createLogger({name: "irrigation", stream: formattedLogger, level: 'debug'});
-
-let delta = require( "./index" )
-let service = new delta.Delta( rootLogger );
-
-service.start( args.port, args["control-http-ip"] ).then( ( url ) => {
-	rootLogger.info( "Delta started: ", url )
-})
-
+service( "irrigation", {
+	launch: async (logger) => {
+		const core = new delta.Delta( logger );
+		const url = await core.start(  args["control-http-port"], args["control-http-ip"] );
+		logger.info("Delta started at ", url);
+		return core;
+	}
+});
