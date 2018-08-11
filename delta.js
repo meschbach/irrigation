@@ -89,15 +89,27 @@ function configureTargetCommands( yargs ){
 				(error) => { console.error(error) })
 	});
 
-	yargs.command("register <pool> <name> <uri>", "Creates a given pool", (y) => {
-		y.positional("pool", {description: "The name to of the new target pool", default: "default"})
-		y.positional("name", {description: "The name to of the new target pool", default: "default"})
-		y.positional("uri", {description: "The name to of the new target pool", default: "default"})
+	yargs.command("register <pool> <name> <uri>", "Registers a given target in a pool", (y) => {
+		y.positional("pool", {description: "The name to of the new target pool (ie: default)"})
+		y.positional("name", {description: "The name to of the new target pool (ie: default-8080)"})
+		y.positional("uri", {description: "The name to of the new target pool (ie: http://localhost:8080)"})
 	}, (args) => {
 		configureClient( args ).registerTarget(args.pool, args.name, args.uri)
 			.then( (results) => { console.log(results) },
 				(error) => { console.error(error) })
 	});
+
+	yargs.command("unregister <pool> <name>", "Removes a given target from a pool", (y) => {
+		y.positional("pool", {description: "The name to of the new target pool (ie: default)"})
+		y.positional("name", {description: "The name to of the new target pool (ie: default-8080)"})
+	}, (args) => {
+		configureClient( args )
+			.removeTarget( args.pool, args.name )
+			.then( (results) => { console.log(results) },
+				(error) => { console.error(error) })
+	});
+
+	yargs.demandCommand();
 }
 
 function deleteIngress( args ){

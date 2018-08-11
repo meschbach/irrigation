@@ -290,7 +290,9 @@ class ExpressControlInterface {
 			const pool = pools[poolName];
 			if( !pool ) {
 				this.logger.info("No such pool");
-				return resp.sendStatus(404);
+				resp.statusCode = 404;
+				resp.statusMessage = "No such pool '" + poolName + "'";
+				return resp.end();
 			}
 
 			if( pool[targetName] ){
