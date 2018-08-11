@@ -31,8 +31,6 @@ class CallCountingService extends EventEmitter {
 	}
 }
 
-const {formattedLogger} = require("../util-bunyan");
-
 describe("round robin load balancing", function(){
 	beforeEach(async function(){
 		this.irrigation = new Irrigation( );

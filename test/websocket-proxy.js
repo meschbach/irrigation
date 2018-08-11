@@ -8,7 +8,7 @@ let delta = require( "../index" )
 const {promiseEvent} = require("junk-bucket/future");
 const Future = require("junk-bucket/future");
 
-const {defaultNullLogger}  = require("../util-bunyan");
+const {defaultNullLogger}  = require("junk-bucket/logging");
 
 describe( "When configuring an ingress for websockets", function() {
 	beforeEach(async function(){

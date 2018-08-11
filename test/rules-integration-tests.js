@@ -29,7 +29,7 @@ class CallCountingService extends EventEmitter {
 	}
 }
 
-const {nullLogger} = require( "../util-bunyan" );
+const {defaultNullLogger} = require( "junk-bucket/logging" );
 
 describe("path routing", function(){
 	beforeEach( async function(){
@@ -42,18 +42,18 @@ describe("path routing", function(){
 		this.defaultTarget = new CallCountingService();
 		const defaultTargetURL = await this.defaultTarget.start();
 
-		this.irrigation = new Irrigation(nullLogger());
+		this.irrigation = new Irrigation( defaultNullLogger );
 		await this.irrigation.start();
 
 		const client = this.irrigation.client();
 		await client.createTargetPool( "target-a" );
-		await client.registerTarget("target-a", "test-a", targetAURL )
+		await client.registerTarget("target-a", "test-a", targetAURL );
 
 		await client.createTargetPool( "target-b" );
-		await client.registerTarget("target-b", "test-b", targetBURL )
+		await client.registerTarget("target-b", "test-b", targetBURL );
 
 		await client.createTargetPool( "default" );
-		await client.registerTarget("default", "test-c", defaultTargetURL )
+		await client.registerTarget("default", "test-c", defaultTargetURL );
 
 		const ingress = await client.ingress( "test-ingress", 0 );
 		await ingress.useDefaultPool("default");

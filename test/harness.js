@@ -2,7 +2,7 @@ const EventEmitter = require("events");
 const {Delta} = require("../index");
 const DeltaClient = require("../client");
 
-const {defaultNullLogger} = require( "../util-bunyan" );
+const {defaultNullLogger} = require( "junk-bucket/logging" );
 
 class Irrigation extends EventEmitter {
 	constructor( logger = defaultNullLogger ){
