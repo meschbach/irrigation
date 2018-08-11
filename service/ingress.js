@@ -49,7 +49,7 @@ class DeltaIngress {
 			response.end("No targets found.");
 		} else {
 			const lb = targetPool.loadBalancer;
-			if(lb.isEmpty) {
+			if( !lb || lb.isEmpty) {
 				response.statusCode = 503;
 				response.end("No targets in the pool " + targetPoolName);
 				return;
