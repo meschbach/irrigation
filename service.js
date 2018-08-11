@@ -6,7 +6,7 @@
 
 const delta = require( "./index" );
 //TODO: To be moved to junk-bucket
-const { service  } = require("./util-service");
+const { service  } = require("junk-bucket/service");
 
 let args = require( 'yargs' )
 	.option( 'ttl', { description: 'Terminate the serivce after a set period of seconds.' } )
