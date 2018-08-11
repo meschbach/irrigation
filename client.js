@@ -10,10 +10,14 @@ const rp = require("request-promise-native");
 
 const assert = require("assert");
 
+//Junk bucket
+const {defaultNullLogger} = require("junk-bucket/logging");
+
 class DeltaClient {
-	constructor( controlURL ) {
+	constructor( controlURL, logger = defaultNullLogger ) {
 		this.url = controlURL;
 		this.authHeader = undefined;
+		this.logger = logger;
 	}
 
 	useBearerToken( token ){

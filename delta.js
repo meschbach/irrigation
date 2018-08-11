@@ -5,10 +5,12 @@
  */
 
 const fs = require( "fs" );
+const {formattedConsoleLog} = require("junk-bucket/logging-bunyan");
 
 function configureClient( args ){
 	let DeltaClient = require( './client' )
-	let client = new DeltaClient( args.service )
+	const logger = formattedConsoleLog("cli");
+	let client = new DeltaClient( args.service, logger )
 
 	if( args.bearer ){
 		client.useBearerToken(args.bearer);
