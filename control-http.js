@@ -184,7 +184,7 @@ class ExpressControlInterface {
 
 			// Verify rules exist
 			const rules = req.body.rules;
-			if( !rules || !rules.length ){
+			if( !rules || !Number.isInteger(rules.length) ){
 				resp.statusCode = 422;
 				resp.json({ok:false, errors: {rules: ["missing array"]}});
 			}
