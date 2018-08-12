@@ -7,7 +7,9 @@ class RoundRobinScheduler {
 	}
 
 	addTarget( target ){
-		this.targets.push(target);
+		if( !this.targets.includes(target)){
+			this.targets.push(target);
+		}
 	}
 
 	removeTarget( target ){
