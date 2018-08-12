@@ -118,6 +118,27 @@ function deleteIngress( args ){
 		.then( (results) => console.log(results), (error) => console.error("Error: ", error ) );
 }
 
+function describeIngress( args ){
+	async function perform(client,name){
+		const ingress = await client.describeIngress(name);
+		const addr = await ingress.address();
+		const rules = await ingress.describeRules();
+		return {name, addr, rules};
+	}
+
+	perform(configureClient( args ), args.name).then( (results) => console.log(results), (error) => console.error("Error: ", error ) );
+}
+
+function resetIngressRules( args ){
+	async function perform(client,name){
+		const ingress = await client.describeIngress(name);
+		ingress.applyRules([{type:"header.host", host: "bad-exmaple.invalid", target:"default"}]);
+	}
+
+	perform(configureClient( args ), args.name).then( (results) => console.log(results), (error) => console.error("Error: ", error ) );
+}
+
+
 let args = require( 'yargs' )
 	.usage( "$0 <command>" )
 	.option( 'bearer', { describe: "Bearer token to be attached to the client" } )
@@ -139,6 +160,12 @@ let args = require( 'yargs' )
 		opts.command( "delete <name>", "Deletes the given ingress point", function(opts){
 			opts.positional("name", {description: "name of intake to be deleted"});
 		}, deleteIngress );
+		opts.command( "describe <name>", "Describe the particular ingress point", function(opts){
+			opts.positional("name", {description: "name of ingress"});
+		}, describeIngress );
+		opts.command( "reset-rules <name>", "Resets rules for the given ingress point", function(opts){
+			opts.positional("name", {description: "name of ingress"});
+		}, resetIngressRules );
 		opts.demandCommand()
 	}, showHelp )
 	.command( "targets", "Modifies target pools", configureTargetCommands, showHelp )
