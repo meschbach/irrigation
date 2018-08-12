@@ -16,6 +16,7 @@ const {make_async} = require("junk-bucket/express");
 const jwt = require("jsonwebtoken");
 
 const {RoundRobinScheduler} = require("./service/round-robin");
+const {compileRules} = require("./service/rules");
 
 /*
  * Control Plane
@@ -189,28 +190,7 @@ class ExpressControlInterface {
 				resp.json({ok:false, errors: {rules: ["missing array"]}});
 			}
 
-			const targetPoolRules = rules.map( (rule) => {
-				switch(rule.type) {
-					case "path.prefix":
-						return ( defaultTarget, req ) => {
-							const path = req.url;
-							return path.startsWith(rule.is) ? rule.target : defaultTarget;
-						}
-					case "header.host":
-						return ( defaultTarget, req ) => {
-							return req.headers["host"] == rule.host ? rule.target : defaultTarget;
-						}
-					case "host.path-prefix":
-						return (defaultTarget, req ) => {
-							const host = req.headers["host"];
-							const path = req.url;
-							return ( host == rule.host && path.startsWith(rule.prefix) ) ? rule.target : defaultTarget;
-						}
-					default:
-						//TODO: This should behandled in validation
-						throw new Error("unsupported rule " + rule.type);
-				}
-			});
+			const targetPoolRules = compileRules(rules);
 			ingress.rules = rules;
 			ingress.targetPoolRules = targetPoolRules;
 			resp.json({ok: true});

@@ -1,4 +1,6 @@
 const assert = require("assert");
+const {runRules} = require("./rules");
+
 /*
  * Responsible for delegating a proxy request the correct proxy handler
  */
@@ -33,9 +35,7 @@ class DeltaIngress {
 	//TODO: Requested and upgrade shouldn't duplicate code
 	requested( request, response ){
 		//TODO: This structure can be improved for performance
-		const targetPoolName = this.targetPoolRules.reduce( (pool, f) => {
-			return f(pool, request)
-		}, this.defaultPool);
+		const targetPoolName = runRules( this.targetPoolRules, this.defaultPool, request );
 		this.logger.debug("Target pool name: ", targetPoolName);
 
 		const targetPool = this.mesh.targetPools[targetPoolName] || {};
