@@ -198,7 +198,7 @@ class ExpressControlInterface {
 						}
 					case "header.host":
 						return ( defaultTarget, req ) => {
-							return req.headers["host"] == req.host ? rule.target : defaultTarget;
+							return req.headers["host"] == rule.host ? rule.target : defaultTarget;
 						}
 					case "host.path-prefix":
 						return (defaultTarget, req ) => {
