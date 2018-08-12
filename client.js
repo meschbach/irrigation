@@ -232,7 +232,7 @@ class DeltaIngressResource {
 			})
 	}
 
-	async describeRules( rules ){
+	async describeRules( ){
 		await this.ensureFresh();
 		return this.cache.rules;
 	}
