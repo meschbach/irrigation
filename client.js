@@ -255,6 +255,25 @@ class DeltaIngressResource {
 			return this.cache.address
 		})
 	}
+
+	async attachSNI( serverName, certificateName ){
+		const targetURL = this.url + "/sni/" + serverName;
+		const req = {
+			method: "PUT",
+			url: targetURL,
+			body: { sni: { serverName, certificateName } },
+			json: true
+		};
+		try {
+			const response = await rp(req);
+			return response.body;
+		}catch(e){
+			const statusCode = e.statusCode;
+			if( statusCode ){
+				throw new Error("Ingress " + this.url + " does not exist");
+			}
+		}
+	}
 }
 
 module.exports = DeltaClient

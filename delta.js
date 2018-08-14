@@ -166,6 +166,7 @@ let args = require( 'yargs' )
 		opts.command( "reset-rules <name>", "Resets rules for the given ingress point", function(opts){
 			opts.positional("name", {description: "name of ingress"});
 		}, resetIngressRules );
+		opts.commandDir(__dirname + "/cli/ingress");
 		opts.demandCommand()
 	}, showHelp )
 	.command( "targets", "Modifies target pools", configureTargetCommands, showHelp )
