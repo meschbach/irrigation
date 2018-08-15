@@ -29,13 +29,13 @@ function promise_get_request( url ) {
 	return future.promised;
 }
 
-function http_promise_listen_url( service, port, logger ){
+function http_promise_listen_url( service, port, logger, protocol = "http" ){
 	const future = new Future();
 	logger.info( "Awaiting listener" )
-	let listener = service.listen( port, () => {
+	let listener = service.listen( port, '0.0.0.0', () => {
 		let host = "localhost"
 		//let host = listener.address().address
-		let url = "http://" + host + ":" + listener.address().port
+		let url = protocol + "://" + host + ":" + listener.address().port
 		logger.info("Listneing on ", url)
 		future.accept( url )
 	})
@@ -215,8 +215,10 @@ class Delta {
 	async secureIngress( name, port, wire_proxy_name, certificateName ) {
 		if( !certificateName ) { throw new Error("TLS requires a certificate"); }
 		const socketOptions = await this.certificateManager.retrieve(certificateName)
-		socketOptions.key = Buffer.from( socketOptions.key )
-		socketOptions.cert = Buffer.from( socketOptions.cert )
+		const options = {
+			key: socketOptions.key,
+			cert: socketOptions.cert
+		};
 
 		let server = new https.Server( socketOptions, ( request, response ) => {
 			ingress.requested( request, response )
@@ -224,13 +226,13 @@ class Delta {
 		server.on("upgrade", function(request, socket, head){
 			ingress.upgrade(request, socket, head);
 		});
-		let whenListening = http_promise_listen_url( server, port, this.logger.child({promise: "ingress-url"}) )
+		let whenListening = http_promise_listen_url( server, port, this.logger.child({promise: "ingress-url"}), "https" )
 
 		let wire_factory = this.wire_proxy_factories[ wire_proxy_name || "hand" ]
 		if( !wire_factory ){ throw new Error( "No such wire proxy registered: " + wire_proxy_name ); }
 
 		let wire_proxy = wire_factory.produce( {} )
-		const ingress = new DeltaIngress( whenListening, this, wire_proxy, server )
+		const ingress = new DeltaIngress( this.logger.child({ingress: name, port: port}), whenListening, this, wire_proxy, server )
 		this.ingress_controllers[ name ] = ingress
 		return ingress
 	}

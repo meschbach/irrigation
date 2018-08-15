@@ -20,8 +20,7 @@ function onInvocation( fn ){
 		try {
 			fn(args, logger, client)
 				.then(function (result) {
-					const text = JSON.stringify(result);
-					process.stdout.write(text);
+					logger.info("Result: ", result);
 				}).catch(function (problem) {
 					logger.error("Unable to complete operation because: ", problem)
 				});

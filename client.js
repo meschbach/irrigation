@@ -39,7 +39,7 @@ class DeltaClient {
 	}
 
 	async describeIngress( name ) {
-		return new DeltaIngressResource(this.url + "/v1/ingress/"+name);
+		return new DeltaIngressResource(this.url + "/v1/ingress/"+name, this.logger.child({ingress: name}));
 	}
 
 	ingress( name = "default", port = 0, wire_proxy_name = "hand" ) {
@@ -49,16 +49,14 @@ class DeltaClient {
 		return promise_requests.post_json( this.url + "/v1/ingress", { name: name, port: port, wire_proxy: wire_proxy_name, wait: true }, this.authHeader )
 			.then( ( result ) => {
 				if( result.headers.statusCode != 201 ){ throw new Error( result.headers.statusCode + " != 201" ) }
-				return new DeltaIngressResource( result.body._self, this.authHeader )
+				return new DeltaIngressResource( result.body._self, this.logger.child({ingress: name}))
 			})
 	}
 
 	async secureIngress( name = "default", port = 0, wire_proxy_name = "hand", certificateName ) {
 		if( !Number.isInteger( port ) ) { throw new Error( "Expected port to be a number, got: " + port ) }
 		if( port < 0 || 65535 < port ){ throw new Error("Port number is invalid: ", port ) }
-		if( !certificateName ){
-			throw new Error("Certificate name must be specified");
-		}
+		assert(certificateName);
 
 		const result = await promise_requests.post_json( this.url + "/v1/ingress", {
 			name: name,
@@ -70,10 +68,9 @@ class DeltaClient {
 		}, this.authHeader )
 
 		if( result.headers.statusCode != 201 ){
-			console.log( result.body );
 			throw new Error( result.headers.statusCode + " != 201" )
 		}
-		return new DeltaIngressResource( result.body._self, this.authHeader )
+		return new DeltaIngressResource( result.body._self, this.logger.child({ingress: name}) )
 	}
 
 	async deleteIngress( name ) {
@@ -99,10 +96,16 @@ class DeltaClient {
 	}
 
 	async uploadCertificate( name, cert, key ){
+		assert(name);
+		assert(cert);
+		assert(key);
 		const result = await promise_requests.put_json( this.url + "/v1/certificate/" + name, {
 			cert: cert,
 			key: key
 		}, this.authHeader );
+		if( result.headers.statusCode != 200 ){
+			throw new Error("Error: (" + result.headers.statusCode + "): " + JSON.stringify(result.body));
+		}
 		return result.body;
 	}
 
@@ -182,10 +185,13 @@ class DeltaClient {
 }
 
 class DeltaIngressResource {
-	constructor( url ) {
-		if( !url ) { throw new Error( "URL must be defined" ) }
+	constructor( url, logger ) {
+		assert(url);
+		assert(logger);
 		this.url = url
 		this.loaded = false
+
+		this.logger = logger;
 	}
 
 	clear_cache() {
@@ -194,13 +200,14 @@ class DeltaIngressResource {
 		this.cache = undefined
 	}
 
-	refresh() {
+	async refresh() {
+		this.logger.info("Refreshing", this.url);
 		this.clear_cache()
-		this.retrieval = promise_requests.get_json( this.url ).then( ( response ) => {
-			this.loaded = true
-			this.cache = response
-		})
-		return this.retrieval
+		this.retrieval = promise_requests.get_json( this.url );
+		this.cache = await this.retrieval;
+		this.logger.info("Completed refresh", this.url);
+		this.loaded = true;
+		return this.cache;
 	}
 
 	async ensureFresh(){
@@ -249,11 +256,9 @@ class DeltaIngressResource {
 	/*
 	 * returns a promise for the address once resolved
 	 */
-	address() {
-		if( !this.retrieval ) { this.refresh() }
-		return this.retrieval.then( () => {
-			return this.cache.address
-		})
+	async address() {
+		if( !this.retrieval ) { await this.refresh() }
+		return this.cache.address;
 	}
 
 	async attachSNI( serverName, certificateName ){
@@ -261,16 +266,20 @@ class DeltaIngressResource {
 		const req = {
 			method: "PUT",
 			url: targetURL,
-			body: { sni: { serverName, certificateName } },
-			json: true
+			json: { certificateName }
 		};
 		try {
 			const response = await rp(req);
+			console.log( response );
 			return response.body;
 		}catch(e){
 			const statusCode = e.statusCode;
-			if( statusCode ){
+			if( statusCode == 404 ){
 				throw new Error("Ingress " + this.url + " does not exist");
+			} else if( statusCode == 422 ){
+				throw new Error("Unable to process request: " + JSON.stringify(e.body));
+			} else {
+				throw e;
 			}
 		}
 	}

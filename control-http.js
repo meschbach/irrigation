@@ -4,6 +4,8 @@
  * Express HTTP Control Interface
  */
 
+const tls = require("tls");
+
 //External depedencies
 let bodyParser = require('body-parser');
 let express = require( 'express' )
@@ -82,17 +84,16 @@ class ExpressControlInterface {
 			let ingress;
 			if( scheme == "https") {
 				this.logger.info("Certificate name ", certificateName);
-				ingress = this.delta.secureIngress( name, port, wire_proxy, certificateName )
+				ingress = await this.delta.secureIngress( name, port, wire_proxy, certificateName )
 			} else {
-				ingress = this.delta.ingress( name, port, wire_proxy )
+				ingress = await this.delta.ingress( name, port, wire_proxy )
 			}
 			let completion = wait ? ingress.listening : Promise.resolve( port )
 			const boundPort = await completion;
 
-			this.logger.info( "Bound port: ", boundPort )
 			resp.statusCode = 201
 			//let scheme = req.get( "scheme" )
-			resp.json( { _self: scheme + "://" + req.get("host") + "/v1/ingress/" + name } )
+			resp.json( { _self:  "http://" + req.get("host") + "/v1/ingress/" + name } )
 		})
 
 		service.get( '/v1/ingress/:name', ( req, resp ) => {
@@ -172,6 +173,33 @@ class ExpressControlInterface {
 		})
 
 		/*********************************************
+		 * Certificate contexts
+		 *********************************************/
+		service.a_put( '/v1/ingress/:name/sni/:sni', async ( req, resp ) => {
+			const ingressName = req.params.name;
+			const serverName = req.params.serverName;
+			const certificateName = req.body.certificateName;
+
+			const asymmetricKey = await this.delta.certificateManager.retrieve(certificateName);
+			if( !asymmetricKey ){
+				resp.status(422);
+				return resp.json({
+					errors: {certificateName: ["No such certificate " + certificateName] }
+				});
+			}
+			const tlsContext = tls.createContext({
+				ca: asymmetricKey.certificate,
+				key: asymmetricKey.key,
+				cert: cert
+			});
+
+			const ingress = this.delta.find_ingress(ingressName);
+			this.serverSocket.addContext( serverName, tlsContext );
+			resp.status(204);
+			resp.json({ok: true});
+		})
+
+		/*********************************************
 		 * Rules API
 		 *********************************************/
 		service.a_put( '/v1/ingress/:name/routing', ( req, resp ) => {
@@ -211,6 +239,23 @@ class ExpressControlInterface {
 
 			const cert = req.body.cert;
 			const key = req.body.key;
+
+			if( !cert ){
+				resp.status(422);
+				return resp.json({
+					errors: {
+						cert: ["required"]
+					}
+				});
+			}
+			if( !key ){
+				resp.status(422);
+				return resp.json({
+					errors: {
+						key: ["required"]
+					}
+				});
+			}
 
 			await this.delta.certificateManager.store( name, cert, key )
 			resp.json( {ok: true } )

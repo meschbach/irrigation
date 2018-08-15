@@ -3,6 +3,7 @@
  *
  * Certificate Management
  */
+const assert = require("assert");
 
 class MemoryCertificateManager {
 	constructor() {
@@ -10,6 +11,9 @@ class MemoryCertificateManager {
 	}
 
 	async store( name, certificate, key ){
+		assert( name )
+		assert( certificate )
+		assert( key )
 		this.certs[name] = {cert: certificate, key};
 	}
 

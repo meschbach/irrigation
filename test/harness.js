@@ -3,6 +3,8 @@ const {Delta} = require("../index");
 const DeltaClient = require("../client");
 
 const {defaultNullLogger} = require( "junk-bucket/logging" );
+const express = require("express");
+const {promise_listening_url} = require("../express-extensions");
 
 class Irrigation extends EventEmitter {
 	constructor( logger = defaultNullLogger ){
@@ -17,7 +19,7 @@ class Irrigation extends EventEmitter {
 	}
 
 	client(){
-		return new DeltaClient( this.localControlURL );
+		return new DeltaClient( this.localControlURL, this.logger.child({component: "client"}) );
 	}
 
 	stop(){
@@ -25,6 +27,30 @@ class Irrigation extends EventEmitter {
 	}
 }
 
+class CallCountingService extends EventEmitter {
+	constructor() {
+		super();
+		this.callCount = 0;
+	}
+
+	async start() {
+		const app = express();
+		app.use( (req,resp) => {
+			this.callCount++;
+			resp.json({count: this.callCount});
+		});
+		app.on("listening", ( socket ) => {
+			this.serviceSocket = socket;
+		});
+		return promise_listening_url( app, 0 );
+	}
+
+	async stop(){
+		this.serviceSocket.close();
+	}
+}
+
 module.exports = {
-	Irrigation
+	Irrigation,
+	CallCountingService
 }
