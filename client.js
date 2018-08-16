@@ -22,7 +22,6 @@ class DeltaClient {
 
 	useBearerToken( token ){
 		this.authHeader = "Bearer " + token;
-		console.log("Installing bearer token", this.authHeader);
 	}
 
 	/**
@@ -178,7 +177,6 @@ class DeltaClient {
 	 * Party Mode
 	 ********/
 	async securityMode(){
-		console.log("sec mode auth: ", this.authHeader);
 		const result = await promise_requests.get_json( this.url + "/v1/security", 200, this.authHeader);
 		return result;
 	}
@@ -276,7 +274,6 @@ class DeltaIngressResource {
 		};
 		try {
 			const response = await rp(req);
-			console.log( response );
 			return response;
 		}catch(e){
 			const statusCode = e.statusCode;

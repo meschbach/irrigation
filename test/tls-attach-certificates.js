@@ -12,7 +12,7 @@ const {expect} = require("chai");
 
 describe("for tls ingress", function(){
 	beforeEach( async function(){
-		const logger = formattedConsoleLog("tls-tests");
+		const logger = defaultNullLogger; //formattedConsoleLog("tls-tests");
 		//generate certificate
 		const attrs = [{name: "commonName", value: "localhost"}]
 		this.asymmetricKey = selfsigned.generate(attrs, { days: 1 });
