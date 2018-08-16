@@ -4,6 +4,7 @@
  * Express HTTP Control Interface
  */
 
+const assert = require("assert");
 const tls = require("tls");
 
 //External depedencies
@@ -59,12 +60,13 @@ class ExpressControlInterface {
 
 		service.a_post( '/v1/ingress', async ( req, resp ) => {
 			// Validate message
-			let port = req.body.port || 0
-			let wire_proxy = req.body.wire_proxy || "hand"
-			let wait = req.body.wait || true
-			let name = req.body.name || "default"
-			const scheme = req.body.scheme || "http";
-			const certificateName = req.body.certificateName;
+			const body = req.body;
+			let port = body.port || 0
+			let wire_proxy = body.wire_proxy || "hand"
+			let wait = body.wait || true
+			let name = body.name || "default"
+			const scheme = body.scheme || "http";
+			const certificateName = body.certificateName;
 
 			if( port == 0 && !wait ){
 				resp.statusCode = 422
@@ -78,10 +80,16 @@ class ExpressControlInterface {
 				resp.statusCode = 422;
 				return resp.json( { errors: {certificateName: ["Must be defined"]}} );
 			}
+
+			if( this.delta.ingress_controllers[name] ){
+				resp.statusCode = 409;
+				return resp.json( { errors: ["Ingress by that name already exists"] } );
+			}
 			this.logger.info("Validated request; looks reasonable")
 
 			// Perform opertaion
 			let ingress;
+			this.logger.info("Creating ingress with target scheme ", {scheme, body: req.body});
 			if( scheme == "https") {
 				this.logger.info("Certificate name ", certificateName);
 				ingress = await this.delta.secureIngress( name, port, wire_proxy, certificateName )
@@ -177,7 +185,7 @@ class ExpressControlInterface {
 		 *********************************************/
 		service.a_put( '/v1/ingress/:name/sni/:sni', async ( req, resp ) => {
 			const ingressName = req.params.name;
-			const serverName = req.params.serverName;
+			const serverName = req.params.sni;
 			const certificateName = req.body.certificateName;
 
 			const asymmetricKey = await this.delta.certificateManager.retrieve(certificateName);
@@ -187,15 +195,26 @@ class ExpressControlInterface {
 					errors: {certificateName: ["No such certificate " + certificateName] }
 				});
 			}
-			const tlsContext = tls.createContext({
-				ca: asymmetricKey.certificate,
-				key: asymmetricKey.key,
-				cert: cert
+
+			const cert = asymmetricKey.cert;
+			const key = asymmetricKey.key;
+			assert(cert);
+			assert(key);
+			const tlsContext = tls.createSecureContext({
+				cert, key, ca: cert
 			});
 
 			const ingress = this.delta.find_ingress(ingressName);
-			this.serverSocket.addContext( serverName, tlsContext );
-			resp.status(204);
+			if( !ingress.secure ){
+				resp.status(422);
+				return resp.json({
+					errors: {socket: ["not a TLS socket"]}
+				})
+			}
+
+			//ingress.serverSocket.addContext( serverName, tlsContext );
+			ingress.serverSocket.sni[ serverName ] = tlsContext;
+			resp.status(200);
 			resp.json({ok: true});
 		})
 

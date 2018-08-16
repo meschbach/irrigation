@@ -9,14 +9,17 @@ class DeltaIngress {
 	 * @param mesh locates the best target to utilize
 	 */
 	constructor( logger, listening, mesh, wire_proxy, serverSocket ){
+		assert(logger);
+		assert( listening );
+		assert( mesh );
+		assert( serverSocket );
+
 		this.logger = logger;
 
-		if( !listening ){ throw new Error("listening required") }
-		if( !mesh ){ throw new Error("mesh required") }
-		this.listening = listening
-		this.targets = []
-		this.mesh = mesh
-		this.wire_proxy = wire_proxy
+		this.listening = listening;
+		this.targets = [];
+		this.mesh = mesh;
+		this.wire_proxy = wire_proxy;
 		this.serverSocket = serverSocket;
 
 		this.rules = []; // Uncompiled version of the rules

@@ -12,7 +12,7 @@ const {expect} = require("chai");
 
 describe("for tls ingress", function(){
 	beforeEach( async function(){
-		const logger = defaultNullLogger;// formattedConsoleLog("tls-tests");
+		const logger = formattedConsoleLog("tls-tests");
 		//generate certificate
 		const attrs = [{name: "commonName", value: "localhost"}]
 		this.asymmetricKey = selfsigned.generate(attrs, { days: 1 });
@@ -82,8 +82,53 @@ describe("for tls ingress", function(){
 		});
 
 		describe("for an additional server name", function(){
-			it("provides the correct certificate")
-			it("can proxy the connection")
+			beforeEach(async function(){
+				//generate certificate
+				const attrs = [{name: "commonName", value: "example.invalid"}];
+				this.altHost = selfsigned.generate(attrs, { days: 1 });
+
+				const certName = "alt name";
+				const client = this.system.client();
+				await client.uploadCertificate( certName, this.altHost.cert, this.altHost.private);
+				const ingress = await client.describeIngress("subject-under-test");
+				await ingress.attachSNI("example.invalid", certName);
+			});
+
+			it("presents the correct certificate", async function(){
+				const future = new Future();
+				const connection = tls.connect({
+					host: this.url.hostname,
+					port: this.url.port,
+					ca: this.altHost.cert,
+					checkServerIdentity: (servername, cert) => {
+						return undefined;
+					},
+					servername: "example.invalid"
+				}, () => {
+					future.accept(connection.getPeerCertificate());
+					connection.end();
+				});
+				connection.on("error", (e) => {
+					future.reject(e);
+				});
+				const cert = await future.promised;
+				expect( cert.subject ).to.deep.eq({CN: "example.invalid"});
+			});
+
+			it("can proxy the connection", async function(){
+				const response = await rp({
+					method: "GET",
+					url: this.address,
+					agentOptions: {
+						ca: this.altHost.cert,
+						servername: "example.invalid",
+						checkServerIdentity: (servername, cert) => {
+							return undefined;
+						}
+					}
+				});
+				expect( this.counter.callCount ).to.eq(1);
+			})
 		});
 	});
 })

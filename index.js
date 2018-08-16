@@ -214,26 +214,35 @@ class Delta {
 
 	async secureIngress( name, port, wire_proxy_name, certificateName ) {
 		if( !certificateName ) { throw new Error("TLS requires a certificate"); }
-		const socketOptions = await this.certificateManager.retrieve(certificateName)
+		const socketOptions = await this.certificateManager.retrieve(certificateName);
 		const options = {
 			key: socketOptions.key,
-			cert: socketOptions.cert
+			cert: socketOptions.cert,
+			SNICallback: (servername, cb) => {
+				const ctx = server.sni[servername];
+				cb(null,ctx);
+			}
 		};
 
-		let server = new https.Server( socketOptions, ( request, response ) => {
+		const server = new https.createServer( options, ( request, response ) => {
 			ingress.requested( request, response )
-		})
+		});
 		server.on("upgrade", function(request, socket, head){
 			ingress.upgrade(request, socket, head);
 		});
-		let whenListening = http_promise_listen_url( server, port, this.logger.child({promise: "ingress-url"}), "https" )
+		server.on("tlsClientError", (e) => {
+			this.logger.error("Connection issue: ", e);
+		});
+		server.sni = {};
+		const whenListening = http_promise_listen_url( server, port, this.logger.child({promise: "ingress-url"}), "https" )
 
-		let wire_factory = this.wire_proxy_factories[ wire_proxy_name || "hand" ]
+		const wire_factory = this.wire_proxy_factories[ wire_proxy_name || "hand" ]
 		if( !wire_factory ){ throw new Error( "No such wire proxy registered: " + wire_proxy_name ); }
 
-		let wire_proxy = wire_factory.produce( {} )
-		const ingress = new DeltaIngress( this.logger.child({ingress: name, port: port}), whenListening, this, wire_proxy, server )
-		this.ingress_controllers[ name ] = ingress
+		const wire_proxy = wire_factory.produce( {} );
+		const ingress = new DeltaIngress( this.logger.child({ingress: name, port: port}), whenListening, this, wire_proxy, server );
+		ingress.secure = true;
+		this.ingress_controllers[ name ] = ingress;
 		return ingress
 	}
 

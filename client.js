@@ -46,7 +46,12 @@ class DeltaClient {
 		if( !Number.isInteger( port ) ) { throw new Error( "Expected port to be a number, got: " + port ) }
 		if( port < 0 || 65535 < port ){ throw new Error("Port number is invalid: ", port ) }
 
-		return promise_requests.post_json( this.url + "/v1/ingress", { name: name, port: port, wire_proxy: wire_proxy_name, wait: true }, this.authHeader )
+		return promise_requests.post_json( this.url + "/v1/ingress", {
+				name: name,
+				port: port,
+				wire_proxy: wire_proxy_name,
+				wait: true
+			}, this.authHeader )
 			.then( ( result ) => {
 				if( result.headers.statusCode != 201 ){ throw new Error( result.headers.statusCode + " != 201" ) }
 				return new DeltaIngressResource( result.body._self, this.logger.child({ingress: name}))
@@ -266,12 +271,13 @@ class DeltaIngressResource {
 		const req = {
 			method: "PUT",
 			url: targetURL,
-			json: { certificateName }
+			body: { certificateName },
+			json: true
 		};
 		try {
 			const response = await rp(req);
 			console.log( response );
-			return response.body;
+			return response;
 		}catch(e){
 			const statusCode = e.statusCode;
 			if( statusCode == 404 ){
