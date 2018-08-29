@@ -112,7 +112,10 @@ class NHPFactory {
 	}
 
 	produce( details ){
-		let proxy = this.nhp.createProxyServer( {} )
+		const proxy = this.nhp.createProxyServer( {} );
+		proxy.on("error", (e) => {
+			this.logger.warn("Encountered error while proxying: ", e);
+		});
 		return new NHPWireProxy( this.logger, proxy )
 	}
 }
@@ -125,12 +128,28 @@ class NHPWireProxy {
 
 	proxy( target, request, response ){
 		this.logger.debug("Proxying ", target);
-		this.wire.web( request, response, { target: target.url } )
+		this.wire.web( request, response, { target: target.url }, (e) =>{
+			this.logger.warn("Encountered error while proxying", e);
+			if( !response.headersSent ){
+				response.statusCode = 502;
+			}
+			if( !response.finished ){
+				response.end();
+			}
+		});
 	}
 
 	upgrade( target, request, socket, head ){
 		this.logger.debug("Upgrading ", target);
-		this.wire.ws(request, socket, head, {target: target.url });
+		this.wire.ws(request, socket, head, {target: target.url }, (e) => {
+			this.logger.warn("Encountered error while proxying", e);
+			if( !response.headersSent ){
+				response.statusCode = 502;
+			}
+			if( !response.finished ){
+				response.end();
+			}
+		});
 	}
 }
 
