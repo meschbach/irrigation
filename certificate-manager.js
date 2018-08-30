@@ -10,11 +10,11 @@ class MemoryCertificateManager {
 		this.certs = {};
 	}
 
-	async store( name, certificate, key ){
-		assert( name )
-		assert( certificate )
-		assert( key )
-		this.certs[name] = {cert: certificate, key};
+	async store( name, certificate, key, ca ){
+		assert( name );
+		assert( certificate );
+		assert( key );
+		this.certs[name] = {cert: certificate, key, ca};
 	}
 
 	async retrieve( name ){
@@ -28,4 +28,4 @@ class MemoryCertificateManager {
 
 module.exports = {
 	MemoryCertificateManager
-}
+};

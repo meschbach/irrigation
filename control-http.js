@@ -258,6 +258,7 @@ class ExpressControlInterface {
 
 			const cert = req.body.cert;
 			const key = req.body.key;
+			const ca = req.body.authority;
 
 			if( !cert ){
 				resp.status(422);
@@ -277,10 +278,10 @@ class ExpressControlInterface {
 			}
 			try {
 				const tlsContext = tls.createSecureContext({
-					cert, key, ca: cert
+					cert, key, ca: ca
 				});
 
-				await this.delta.certificateManager.store( name, cert, key );
+				await this.delta.certificateManager.store( name, cert, key, ca );
 				resp.json( {ok: true } )
 			}catch(e){
 				this.logger.warn("Unable to creates security context because of error", e);
