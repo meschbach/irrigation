@@ -168,7 +168,7 @@ class ExpressControlInterface {
 				return resp.json( { errors: { targets: ["missing"] } } );
 			}
 
-			let ingress = this.delta.find_ingress( ingress_name )
+			let ingress = this.delta.find_ingress( ingress_name );
 			if( !ingress ){
 				resp.statusCode = 404;
 				return resp.end()
@@ -176,9 +176,9 @@ class ExpressControlInterface {
 
 			ingress.useDefaultPool( defaultPool );
 
-			resp.statusCode = 200
+			resp.statusCode = 200;
 			resp.json( { status: "ok" })
-		})
+		});
 
 		/*********************************************
 		 * Certificate contexts
@@ -246,12 +246,12 @@ class ExpressControlInterface {
 
 		service.get( "/v1/status", ( req, resp ) => {
 			resp.json( { ok: true } )
-		})
+		});
 
 		service.a_get( "/v1/certificate", async ( req, resp ) => {
 			const names = await this.delta.certificateManager.names();
 			resp.json( { ok: true, names } )
-		})
+		});
 
 		service.a_put( "/v1/certificate/:name", async (req, resp) => {
 			const name = req.params.name;
@@ -276,7 +276,7 @@ class ExpressControlInterface {
 				});
 			}
 
-			await this.delta.certificateManager.store( name, cert, key )
+			await this.delta.certificateManager.store( name, cert, key );
 			resp.json( {ok: true } )
 		});
 
