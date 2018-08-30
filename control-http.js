@@ -275,9 +275,22 @@ class ExpressControlInterface {
 					}
 				});
 			}
+			try {
+				const tlsContext = tls.createSecureContext({
+					cert, key, ca: cert
+				});
 
-			await this.delta.certificateManager.store( name, cert, key );
-			resp.json( {ok: true } )
+				await this.delta.certificateManager.store( name, cert, key );
+				resp.json( {ok: true } )
+			}catch(e){
+				this.logger.warn("Unable to creates security context because of error", e);
+				resp.status(400);
+				return resp.json({
+					errors: {
+						cert: ["Unable to load security context because " + e.message ]
+					}
+				});
+			}
 		});
 
 		/*********************************************
