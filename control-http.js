@@ -102,7 +102,7 @@ class ExpressControlInterface {
 			resp.statusCode = 201
 			//let scheme = req.get( "scheme" )
 			resp.json( { _self:  "http://" + req.get("host") + "/v1/ingress/" + name } )
-		})
+		});
 
 		service.get( '/v1/ingress/:name', ( req, resp ) => {
 			let name = req.params.name
@@ -116,7 +116,7 @@ class ExpressControlInterface {
 				resp.statusCode = 200
 				resp.json({ address: address, rules: ingress.rules })
 			});
-		} )
+		} );
 
 		service.delete( '/v1/ingress/:name', ( req, resp ) => {
 			let name = req.params.name;
