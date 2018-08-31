@@ -285,7 +285,7 @@ class DeltaIngressResource {
 			if( statusCode == 404 ){
 				throw new Error("Ingress " + this.url + " does not exist");
 			} else if( statusCode == 422 ){
-				throw new Error("Unable to process request: " + JSON.stringify(e.body));
+				throw new Error("Unable to process request: " + JSON.stringify(e.response.body));
 			} else {
 				throw e;
 			}
