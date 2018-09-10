@@ -13,6 +13,7 @@ const {defaultNullLogger}  = require("junk-bucket/logging");
 const http = require("http");
 const {addressOnListen} = require("junk-bucket/sockets");
 const assert = require("assert");
+const selfsigned = require("selfsigned");
 
 describe( "When configuring an ingress for websockets", function() {
 	beforeEach(async function(){
@@ -48,6 +49,8 @@ describe( "When configuring an ingress for websockets", function() {
 		const badIngress = await this.client.ingress("ws-bad", 0, "node-http-proxy");
 
 		this.wsBadIngressURL = await badIngress.address();
+		await badIngress.useDefaultPool("ws-bad");
+
 		this.wsIngressURL = await ingress.address();
 		await ingress.useDefaultPool("ws-pool");
 
@@ -56,14 +59,15 @@ describe( "When configuring an ingress for websockets", function() {
 			resp.statusCode = 503;
 			resp.end();
 		});
-		httpUpgrade503.on("upgrade", (req) => {
-			req.close();
+		httpUpgrade503.on("upgrade", (req, socket) => {
+			socket.end();
 		});
 		this.httpUpgradeBind = addressOnListen(httpUpgrade503 );
 		const httpUpgradeAddress = await this.httpUpgradeBind.address;
 		await this.client.createTargetPool("ws-503");
 		await this.client.registerTarget("ws-bad", "ws-target", "http://localhost:"+ httpUpgradeAddress.port);
 		const upgradeIngress = await this.client.ingress("ws-503", 0, "node-http-proxy");
+		await upgradeIngress.useDefaultPool("ws-503");
 		this.wsUpgradeURL = await upgradeIngress.address();
 	});
 	afterEach( async function(){
@@ -98,26 +102,56 @@ describe( "When configuring an ingress for websockets", function() {
 		expect(result).to.be.eq("connected");
 	} );
 
-	it( "reasonably fails when ingress target is wrong", async function(){
-		const url = this.wsBadIngressURL;
-		const ws = new WebSocket(url);
-		try {
-			await promiseEvent(ws, "open");
-			assert(false);
-		}catch(e){
-			console.log(e);
-		}
+	describe("misconfigured upstreams", function(){
+		it( "reasonably fails when ingress target is wrong", async function(){
+			const url = this.wsBadIngressURL;
+			const ws = new WebSocket(url);
+			try {
+				await promiseEvent(ws, "open");
+				assert(false);
+			}catch(e){
+				console.log(e);
+			}
+		});
+
+		it( "reasonably fails when ingress errors on proxy", async function(){
+			const url = this.wsUpgradeURL;
+			const ws = new WebSocket(url);
+			try {
+				await promiseEvent(ws, "open");
+				ws.close();
+				assert(false);
+			}catch(e){
+				assert(e);
+			}
+		});
 	});
 
-	it( "reasonably fails when ingress errors on proxy", async function(){
-		const url = this.wsUpgradeURL;
-		const ws = new WebSocket(url);
-		try {
-			await promiseEvent(ws, "open");
-			ws.close();
-			assert(false);
-		}catch(e){
-			assert(e);
-		}
+	describe("for TLS connections", function(){
+		beforeEach(async function(){
+			const httpUpgradeAddress = await this.httpUpgradeBind.address;
+
+			const attrs = [{name: "commonName", value: "example.invalid"}];
+			this.altHost = selfsigned.generate(attrs, { days: 1 });
+
+			const certName = "ws-503-tls";
+			await this.client.uploadCertificate( certName, this.altHost.cert, this.altHost.private);
+			const ingress = await this.client.secureIngress("ws-503-tls", 0, "node-http-proxy", certName);
+			await ingress.useDefaultPool("ws-503");
+			this.wsTLS403URL = await ingress.address();
+		});
+
+		it( "reasonably fails when TLS ingress errors on proxy", async function(){
+			const url = this.wsTLS403URL.replace("http","ws");
+			console.log(url);
+			const ws = new WebSocket(url);
+			try {
+				await promiseEvent(ws, "open");
+				ws.close();
+				assert(false);
+			}catch(e){
+				assert(e);
+			}
+		});
 	});
 });

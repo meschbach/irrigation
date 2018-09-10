@@ -143,12 +143,7 @@ class NHPWireProxy {
 		this.logger.debug("Upgrading ", target);
 		this.wire.ws(request, socket, head, {target: target.url }, (e) => {
 			this.logger.warn("Encountered error while proxying", e);
-			if( !response.headersSent ){
-				response.statusCode = 502;
-			}
-			if( !response.finished ){
-				response.end();
-			}
+			socket.end();
 		});
 	}
 }
@@ -244,10 +239,22 @@ class Delta {
 		};
 
 		const server = new https.createServer( options, ( request, response ) => {
-			ingress.requested( request, response )
+			try {
+				ingress.requested(request, response)
+			} catch(e) {
+				this.logger.error("Failed to dispatch request", e);
+				response.statusCode = 543;
+				response.statusMessage = "Internal proxy error";
+				response.end("An internal proxy error occurred so the request may not be completed.");
+			}
 		});
 		server.on("upgrade", function(request, socket, head){
-			ingress.upgrade(request, socket, head);
+			try {
+				ingress.upgrade(request, socket, head);
+			} catch(e) {
+				this.logger.error("Failed to upgrade socket", e);
+				socket.end();
+			}
 		});
 		server.on("tlsClientError", (e) => {
 			this.logger.error("Connection issue: ", e);
