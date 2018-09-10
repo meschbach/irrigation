@@ -217,7 +217,7 @@ class Delta {
 				ingress.upgrade(request, socket, head);
 			} catch(e) {
 				this.logger.error("Failed to upgrade socket", e);
-				socket.close();
+				socket.end();
 			}
 		});
 		let whenListening = http_promise_listen_url( server, port, this.logger.child({promise: "ingress-url"}) )

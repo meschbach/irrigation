@@ -36,8 +36,14 @@ describe( "When configuring an ingress for websockets", function() {
 		this.client = new DeltaClient( this.proxyControl );
 		await this.client.createTargetPool("ws-pool");
 		await this.client.registerTarget("ws-pool", "ws-target", "http://localhost:"+ this.targetPort);
-		const ingress = await this.client.ingress("ws-test", 0, "node-http-proxy");
+		//TODO: Shoudl probably bind to a service which rasises an error
+		await this.client.createTargetPool("ws-bad");
+		await this.client.registerTarget("ws-bad", "ws-target", "http://localhost:"+ 35536);
 
+		const ingress = await this.client.ingress("ws-test", 0, "node-http-proxy");
+		const badIngress = await this.client.ingress("ws-bad", 0, "node-http-proxy");
+
+		this.wsBadIngressURL = await badIngress.address();
 		this.wsIngressURL = await ingress.address();
 		await ingress.useDefaultPool("ws-pool");
 	});
@@ -71,4 +77,15 @@ describe( "When configuring an ingress for websockets", function() {
 		const result = await resultPromise
 		expect(result).to.be.eq("connected");
 	} );
+
+	it( "reasonably fails when ingress target is wrong", async function(){
+		const url = this.wsBadIngressURL;
+		const ws = new WebSocket(url);
+		try {
+			await promiseEvent(ws, "open");
+			expect(this.connected).to.eq(false);
+		}catch(e){
+			// ws.close();
+		}
+	});
 });
