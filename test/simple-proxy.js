@@ -20,22 +20,22 @@ class SimpleTestService {
 		const future = new Future();
 
 		this.app = express()
-		this.app.use( morgan( "short" ) )
-		this.app.use( bodyParser.json() )
+		this.app.use( morgan( "short" ) );
+		this.app.use( bodyParser.json() );
 		this.app.get( "/proxy-test/received", (request,response) => {
 			response.json( {passed: true })
-		})
+		});
 
 		this.app.post( "/proxy-test/post-test", ( request, response ) => {
-			let value = request.body['shooting stars']
+			let value = request.body['shooting stars'];
 			response.json( {passed: value == "moon" } )
-		})
+		});
 
 		let listener = this.app.listen( 0, () => {
-			let port = listener.address().port
-			this.port = port
+			let port = listener.address().port;
+			this.port = port;
 			future.accept( port )
-		})
+		});
 		this.appSocket = listener;
 
 		return future.promised;
