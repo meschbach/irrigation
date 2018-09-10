@@ -70,9 +70,11 @@ class DeltaIngress {
 		const targetPool = this.mesh.targetPools[this.defaultPool] || {};
 		const targets = Object.values(targetPool.targets || {});
 		if( targets.length == 0 ){
-			this.logger.warn( "No targets found in pool",  {targetPool: this.defaultPool });
-			response.statusCode = 503;
-			response.end()
+			const method = request.method;
+			const uri = request.url;
+			const host = request.headers["host"];
+			this.logger.warn( "No targets found in pool",  {targetPool: this.defaultPool, method, uri, host });
+			socket.end();
 		} else {
 			const target = targets[0];
 			this.logger.debug( "Dispatching to ", {targets, target} );
