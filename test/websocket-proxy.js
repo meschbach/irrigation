@@ -3,12 +3,16 @@ const expect = chai.expect;
 
 const WebSocket = require('ws');
 const DeltaClient = require("../client");
-let delta = require( "../index" )
+let delta = require( "../index" );
 
 const {promiseEvent} = require("junk-bucket/future");
 const Future = require("junk-bucket/future");
 
 const {defaultNullLogger}  = require("junk-bucket/logging");
+
+const http = require("http");
+const {addressOnListen} = require("junk-bucket/sockets");
+const assert = require("assert");
 
 describe( "When configuring an ingress for websockets", function() {
 	beforeEach(async function(){
@@ -46,8 +50,24 @@ describe( "When configuring an ingress for websockets", function() {
 		this.wsBadIngressURL = await badIngress.address();
 		this.wsIngressURL = await ingress.address();
 		await ingress.useDefaultPool("ws-pool");
+
+		//503 backend
+		const httpUpgrade503 = http.createServer( (req, resp) => {
+			resp.statusCode = 503;
+			resp.end();
+		});
+		httpUpgrade503.on("upgrade", (req) => {
+			req.close();
+		});
+		this.httpUpgradeBind = addressOnListen(httpUpgrade503 );
+		const httpUpgradeAddress = await this.httpUpgradeBind.address;
+		await this.client.createTargetPool("ws-503");
+		await this.client.registerTarget("ws-bad", "ws-target", "http://localhost:"+ httpUpgradeAddress.port);
+		const upgradeIngress = await this.client.ingress("ws-503", 0, "node-http-proxy");
+		this.wsUpgradeURL = await upgradeIngress.address();
 	});
 	afterEach( async function(){
+		await this.httpUpgradeBind.stop();
 		await this.proxy.stop();
 		await this.targetService.close();
 	});
@@ -83,9 +103,21 @@ describe( "When configuring an ingress for websockets", function() {
 		const ws = new WebSocket(url);
 		try {
 			await promiseEvent(ws, "open");
-			expect(this.connected).to.eq(false);
+			assert(false);
 		}catch(e){
-			// ws.close();
+			console.log(e);
+		}
+	});
+
+	it( "reasonably fails when ingress errors on proxy", async function(){
+		const url = this.wsUpgradeURL;
+		const ws = new WebSocket(url);
+		try {
+			await promiseEvent(ws, "open");
+			ws.close();
+			assert(false);
+		}catch(e){
+			assert(e);
 		}
 	});
 });
