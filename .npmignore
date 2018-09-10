@@ -1,2 +1,5 @@
 test/
 .idea/
+.dockerignore
+.travis.yml
+Dockerfile
