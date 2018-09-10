@@ -248,7 +248,7 @@ class Delta {
 				response.end("An internal proxy error occurred so the request may not be completed.");
 			}
 		});
-		server.on("upgrade", function(request, socket, head){
+		server.on("upgrade", (request, socket, head) => {
 			try {
 				ingress.upgrade(request, socket, head);
 			} catch(e) {
