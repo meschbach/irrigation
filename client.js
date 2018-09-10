@@ -270,6 +270,9 @@ class DeltaIngressResource {
 	}
 
 	async attachSNI( serverName, certificateName ){
+		assert(serverName);
+		assert(certificateName);
+
 		const targetURL = this.url + "/sni/" + serverName;
 		const req = {
 			method: "PUT",
