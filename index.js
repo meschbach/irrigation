@@ -115,7 +115,9 @@ class NHPFactory {
 	}
 
 	produce( details ){
-		const proxy = this.nhp.createProxyServer( {} );
+		const proxy = this.nhp.createProxyServer( {
+			xfwd: true
+		} );
 		proxy.on("error", (e) => {
 			this.logger.warn("Encountered error while proxying: ", e);
 		});
