@@ -29,17 +29,19 @@ function promise_get_request( url ) {
 	return future.promised;
 }
 
-function http_promise_listen_url( service, port, logger, protocol = "http" ){
-	const future = new Future();
-	logger.info( "Awaiting listener" )
-	let listener = service.listen( port, '0.0.0.0', () => {
-		let host = "localhost"
-		//let host = listener.address().address
-		let url = protocol + "://" + host + ":" + listener.address().port
-		logger.info("Listneing on ", url)
-		future.accept( url )
-	})
-	return future.promised;
+const {addressOnListen} = require("junk-bucket/sockets");
+async function http_promise_listen_url( service, port, logger, protocol = "http" ){
+	assert(service);
+	try {
+		const listener = addressOnListen(service, port, '0.0.0.0');
+		const rawAddress = await listener.address;
+		const host = rawAddress.host;
+		const url = protocol + "://" + host + ":" + rawAddress.port;
+		logger.info("Listening on ", url);
+		return url;
+	}catch(e){
+		throw new Error("Failed to bind to " + '0.0.0.0' + ":" + port + " because " + e.message );
+	}
 }
 
 /*

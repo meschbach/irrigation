@@ -46,20 +46,40 @@ class DeltaClient {
 		return response.ingress.map( i => i.name );
 	}
 
-	ingress( name = "default", port = 0, wire_proxy_name = "hand" ) {
+	async ingress( name = "default", port = 0, wire_proxy_name = "hand" ) {
 		if( !Number.isInteger( port ) ) { throw new Error( "Expected port to be a number, got: " + port ) }
 		if( port < 0 || 65535 < port ){ throw new Error("Port number is invalid: ", port ) }
 
-		return promise_requests.post_json( this.url + "/v1/ingress", {
-				name: name,
-				port: port,
-				wire_proxy: wire_proxy_name,
-				wait: true
-			}, this.authHeader )
-			.then( ( result ) => {
-				if( result.headers.statusCode != 201 ){ throw new Error( result.headers.statusCode + " != 201" ) }
-				return new DeltaIngressResource( result.body._self, this.logger.child({ingress: name}))
-			})
+		const requestBody = {
+			name: name,
+			port: port,
+			wire_proxy: wire_proxy_name,
+			wait: true
+		};
+		const req = {
+			method: "POST",
+			url: this.url + "/v1/ingress",
+			json: requestBody
+		};
+		if( this.authHeader ){
+			req["Authorization"] = this.authHeader;
+		}
+
+		try {
+			const result = await rp(req);
+			return new DeltaIngressResource(result._self, this.logger.child({ingress: name}));
+		}catch(problem){
+			if( problem.response ){
+				const statusCode = (problem.response || {}).statusCode;
+				if(statusCode == 409){
+					throw new Error( problem.response.body.problem );
+				} else {
+					throw new Error( "Unexpected response code " + problem );
+				}
+			} else {
+				throw problem;
+			}
+		}
 	}
 
 	async secureIngress( name = "default", port = 0, wire_proxy_name = "hand", certificateName ) {
@@ -67,19 +87,39 @@ class DeltaClient {
 		if( port < 0 || 65535 < port ){ throw new Error("Port number is invalid: ", port ) }
 		assert(certificateName);
 
-		const result = await promise_requests.post_json( this.url + "/v1/ingress", {
+
+		const requestBody = {
 			name: name,
 			port: port,
 			wire_proxy: wire_proxy_name,
 			wait: true,
 			certificateName: certificateName,
 			scheme: "https"
-		}, this.authHeader )
-
-		if( result.headers.statusCode != 201 ){
-			throw new Error( result.headers.statusCode + " != 201" )
+		};
+		const req = {
+			method: "POST",
+			url: this.url + "/v1/ingress",
+			json: requestBody
+		};
+		if( this.authHeader ){
+			req["Authorization"] = this.authHeader;
 		}
-		return new DeltaIngressResource( result.body._self, this.logger.child({ingress: name}) )
+
+		try {
+			const result = await rp(req);
+			return new DeltaIngressResource(result._self, this.logger.child({ingress: name}));
+		}catch(problem){
+			if( problem.response ){
+				const statusCode = (problem.response || {}).statusCode;
+				if(statusCode == 409){
+					throw new Error( problem.response.body.problem );
+				} else {
+					throw new Error( "Unexpected response code " + problem );
+				}
+			} else {
+				throw problem;
+			}
+		}
 	}
 
 	async deleteIngress( name ) {

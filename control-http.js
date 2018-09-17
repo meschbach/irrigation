@@ -61,15 +61,15 @@ class ExpressControlInterface {
 		service.a_post( '/v1/ingress', async ( req, resp ) => {
 			// Validate message
 			const body = req.body;
-			let port = body.port || 0
-			let wire_proxy = body.wire_proxy || "hand"
-			let wait = body.wait || true
-			let name = body.name || "default"
+			let port = body.port || 0;
+			let wire_proxy = body.wire_proxy || "hand";
+			let wait = body.wait || true;
+			let name = body.name || "default";
 			const scheme = body.scheme || "http";
 			const certificateName = body.certificateName;
 
 			if( port == 0 && !wait ){
-				resp.statusCode = 422
+				resp.statusCode = 422;
 				return resp.json( { errors: ["Must wait on unspecified ports"] } )
 			}
 			if( !["http", "https"].includes(scheme) ){
@@ -87,21 +87,26 @@ class ExpressControlInterface {
 			}
 			this.logger.info("Validated request; looks reasonable")
 
-			// Perform opertaion
-			let ingress;
-			this.logger.info("Creating ingress with target scheme ", {scheme, body: req.body});
-			if( scheme == "https") {
-				this.logger.info("Certificate name ", certificateName);
-				ingress = await this.delta.secureIngress( name, port, wire_proxy, certificateName )
-			} else {
-				ingress = await this.delta.ingress( name, port, wire_proxy )
-			}
-			let completion = wait ? ingress.listening : Promise.resolve( port )
-			const boundPort = await completion;
+			// Perform operation
+			try {
+				let ingress;
+				this.logger.info("Creating ingress with target scheme ", {scheme, body: req.body});
+				if (scheme == "https") {
+					this.logger.info("Certificate name ", certificateName);
+					ingress = await this.delta.secureIngress(name, port, wire_proxy, certificateName)
+				} else {
+					ingress = await this.delta.ingress(name, port, wire_proxy)
+				}
+				let completion = wait ? ingress.listening : Promise.resolve(port);
+				const boundPort = await completion;
 
-			resp.statusCode = 201
-			//let scheme = req.get( "scheme" )
-			resp.json( { _self:  "http://" + req.get("host") + "/v1/ingress/" + name } )
+				resp.statusCode = 201;
+				//let scheme = req.get( "scheme" )
+				resp.json({_self: "http://" + req.get("host") + "/v1/ingress/" + name})
+			}catch(problem){
+				resp.statusCode = 409;
+				resp.json({ok:false, problem: problem.message});
+			}
 		});
 
 		service.get( '/v1/ingress/:name', ( req, resp ) => {
