@@ -232,6 +232,9 @@ class Delta {
 	async secureIngress( name, port, wire_proxy_name, certificateName ) {
 		if( !certificateName ) { throw new Error("TLS requires a certificate"); }
 		const socketOptions = await this.certificateManager.retrieve(certificateName);
+		if( !socketOptions ){
+			throw new Error("Certificate context is missing for " + certificateName);
+		}
 		const options = {
 			key: socketOptions.key,
 			cert: socketOptions.cert,
