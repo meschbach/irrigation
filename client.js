@@ -58,17 +58,7 @@ class DeltaClient {
 		return response.ingress.map( i => i.name );
 	}
 
-	async ingress( name = "default", port = 0, wire_proxy_name = "hand" ) {
-		if( !Number.isInteger( port ) ) { throw new Error( "Expected port to be a number, got: " + port ) }
-		if( port < 0 || 65535 < port ){ throw new Error("Port number is invalid: ", port ) }
-
-		const requestBody = {
-			name: name,
-			port: port,
-			wire_proxy: wire_proxy_name,
-			wait: true
-		};
-
+	async _createIngress( requestBody, name ){
 		try {
 			const result = await this._post_json("/v1/ingress", requestBody);
 			return new DeltaIngressResource(result._self, this.logger.child({ingress: name}));
@@ -86,6 +76,19 @@ class DeltaClient {
 		}
 	}
 
+	async ingress( name = "default", port = 0, wire_proxy_name = "hand" ) {
+		if( !Number.isInteger( port ) ) { throw new Error( "Expected port to be a number, got: " + port ) }
+		if( port < 0 || 65535 < port ){ throw new Error("Port number is invalid: ", port ) }
+
+		const requestBody = {
+			name: name,
+			port: port,
+			wire_proxy: wire_proxy_name,
+			wait: true
+		};
+		return await this._createIngress(requestBody, name );
+	}
+
 	async secureIngress( name = "default", port = 0, wire_proxy_name = "hand", certificateName ) {
 		if( !Number.isInteger( port ) ) { throw new Error( "Expected port to be a number, got: " + port ) }
 		if( port < 0 || 65535 < port ){ throw new Error("Port number is invalid: ", port ) }
@@ -100,22 +103,7 @@ class DeltaClient {
 			certificateName: certificateName,
 			scheme: "https"
 		};
-
-		try {
-			const result = await this._post_json("/v1/ingress", requestBody);
-			return new DeltaIngressResource(result._self, this.logger.child({ingress: name}));
-		}catch(problem){
-			if( problem.response ){
-				const statusCode = (problem.response || {}).statusCode;
-				if(statusCode == 409){
-					throw new Error( problem.response.body.problem );
-				} else {
-					throw new Error( "Unexpected response code " + problem );
-				}
-			} else {
-				throw problem;
-			}
-		}
+		return await this._createIngress(requestBody, name);
 	}
 
 	async deleteIngress( name ) {
