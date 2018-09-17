@@ -32,15 +32,16 @@ function promise_get_request( url ) {
 const {addressOnListen} = require("junk-bucket/sockets");
 async function http_promise_listen_url( service, port, logger, protocol = "http" ){
 	assert(service);
+	const bindHost = '0.0.0.0';
 	try {
-		const listener = addressOnListen(service, port, '0.0.0.0');
+		const listener = addressOnListen(service, port, bindHost);
 		const rawAddress = await listener.address;
 		const host = rawAddress.host;
 		const url = protocol + "://" + host + ":" + rawAddress.port;
 		logger.info("Listening on ", url);
 		return url;
 	}catch(e){
-		throw new Error("Failed to bind to " + '0.0.0.0' + ":" + port + " because " + e.message );
+		throw new Error("Failed to bind to " + bindHost + ":" + port + " because " + e.message );
 	}
 }
 
