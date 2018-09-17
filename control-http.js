@@ -104,6 +104,7 @@ class ExpressControlInterface {
 				//let scheme = req.get( "scheme" )
 				resp.json({_self: "http://" + req.get("host") + "/v1/ingress/" + name})
 			}catch(problem){
+				this.logger.error("Failed to bind to port", problem);
 				resp.statusCode = 409;
 				resp.json({ok:false, problem: problem.message});
 			}
