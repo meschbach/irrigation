@@ -20,6 +20,18 @@ class DeltaClient {
 		this.logger = logger;
 	}
 
+	async _post_json( uri, body ) {
+		const req = {
+			method: "POST",
+			url: this.url + uri,
+			json: body
+		};
+		if( this.authHeader ){
+			req["Authorization"] = this.authHeader;
+		}
+		return await rp(req);
+	}
+
 	useBearerToken( token ){
 		this.authHeader = "Bearer " + token;
 	}
@@ -56,21 +68,13 @@ class DeltaClient {
 			wire_proxy: wire_proxy_name,
 			wait: true
 		};
-		const req = {
-			method: "POST",
-			url: this.url + "/v1/ingress",
-			json: requestBody
-		};
-		if( this.authHeader ){
-			req["Authorization"] = this.authHeader;
-		}
 
 		try {
-			const result = await rp(req);
+			const result = await this._post_json("/v1/ingress", requestBody);
 			return new DeltaIngressResource(result._self, this.logger.child({ingress: name}));
 		}catch(problem){
 			if( problem.response ){
-				const statusCode = (problem.response || {}).statusCode;
+				const statusCode = problem.response.statusCode;
 				if(statusCode == 409){
 					throw new Error( problem.response.body.problem );
 				} else {
@@ -96,17 +100,9 @@ class DeltaClient {
 			certificateName: certificateName,
 			scheme: "https"
 		};
-		const req = {
-			method: "POST",
-			url: this.url + "/v1/ingress",
-			json: requestBody
-		};
-		if( this.authHeader ){
-			req["Authorization"] = this.authHeader;
-		}
 
 		try {
-			const result = await rp(req);
+			const result = await this._post_json("/v1/ingress", requestBody);
 			return new DeltaIngressResource(result._self, this.logger.child({ingress: name}));
 		}catch(problem){
 			if( problem.response ){
