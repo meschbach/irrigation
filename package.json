@@ -10,24 +10,24 @@
 		"start": "node service.js"
 	},
 	"devDependencies": {
-		"chai": "4.1.2",
+		"chai": "4.2.0",
 		"chai-as-promised": "7.1.1",
-		"mocha": "5.2.0",
+		"mocha": "6.0.2",
 		"selfsigned": "1.10.3"
 	},
 	"dependencies": {
 		"body-parser": "1.18.3",
 		"bunyan": "1.8.12",
 		"bunyan-format": "0.2.1",
-		"express": "4.16.3",
+		"express": "4.16.4",
 		"http-proxy": "1.17.0",
 		"jsonwebtoken": "8.3.0",
-		"junk-bucket": "1.0.6",
-		"morgan": "1.9.0",
+		"junk-bucket": "1.1.1",
+		"morgan": "1.9.1",
 		"request": "2.88.0",
-		"request-promise-native": "1.0.5",
-		"ws": "6.0.0",
-		"yargs": "12.0.2"
+		"request-promise-native": "1.0.7",
+		"ws": "6.2.0",
+		"yargs": "13.2.2"
 	},
 	"keywords": [
 		"http",
