@@ -1,16 +1,16 @@
 /*
  * Delta L7 HTTP Proxy
  */
-let http = require( 'http' );
+const http = require( 'http' );
 const https = require( 'https' );
 
 // Internal dependencies
 const {parallel} = require("junk-bucket/future");
 
-let DeltaClient = require( './client' )
-let promise_post_json_request = require( './promise-requests' ).post_json
+const DeltaClient = require( './client' );
+const promise_post_json_request = require( './promise-requests' ).post_json;
 const promise_get_request = require("./promise-requests").get_request;
-let {ExpressControlInterface} = require( './control-http' )
+const {ExpressControlInterface} = require( './control-http' );
 const { MemoryCertificateManager } = require( './certificate-manager' );
 
 const {DeltaIngress} = require("./service/ingress");
@@ -298,8 +298,9 @@ class Delta {
 	}
 }
 
-exports.Delta = Delta
-exports.DeltaClient = DeltaClient;
-exports.promise_get_request = promise_get_request;
-exports.promise_post_json_request = promise_post_json_request;
-
+module.exports = {
+	Delta,
+	DeltaClient,
+	promise_get_request,
+	promise_post_json_request
+};
