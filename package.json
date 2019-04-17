@@ -22,7 +22,7 @@
 		"express": "4.16.4",
 		"http-proxy": "1.17.0",
 		"jsonwebtoken": "8.5.1",
-		"junk-bucket": "1.1.1",
+		"junk-bucket": "1.2.1",
 		"morgan": "1.9.1",
 		"request": "2.88.0",
 		"request-promise-native": "1.0.7",
