@@ -1,3 +1,5 @@
 node_modules
 .idea
 .git
+.nyc_output
+coverage
