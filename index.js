@@ -81,16 +81,6 @@ class HandRolledProxier {
 }
 
 /*
- * A target which may be communciated with
- */
-class DeltaTarget {
-	constructor( port ) {
-		if( !port ) { throw new Error("port may not be falsy"); }
-		this.port = port
-	}
-}
-
-/*
  * Node HTTP Proxy
  */
 class NHPFactory {
