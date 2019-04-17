@@ -1,13 +1,9 @@
 /*
  * Delta L7 HTTP Proxy
  */
-let bodyParser = require('body-parser');
-let express = require( 'express' )
-let http = require( 'http' )
+let http = require( 'http' );
 const https = require( 'https' );
-let morgan = require( 'morgan' )
-let request = require( 'request' )
-let url = require( 'url' )
+let request = require( 'request' );
 
 // Internal dependencies
 const Future = require("junk-bucket/future");
