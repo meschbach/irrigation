@@ -16,13 +16,16 @@ const { MemoryCertificateManager } = require( './certificate-manager' );
 
 const {DeltaIngress} = require("./service/ingress");
 
-function promise_get_request( url ) {
-	const future = new Future();
-	request( url, (err, resp, body) => {
-		if( err ){ return future.reject( err ) }
-		future.accept( { headers: resp, body } )
-	});
-	return future.promised;
+const requestPromise = require("request-promise-native");
+async function promise_get_request( url ) {
+	const options = {
+		method: "GET",
+		url,
+		simple: false,
+		resolveWithFullResponse: true
+	};
+	const result = await requestPromise( options );
+	return result;
 }
 
 const {addressOnListen} = require("junk-bucket/sockets");

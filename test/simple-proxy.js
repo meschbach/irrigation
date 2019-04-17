@@ -85,7 +85,7 @@ class SimpleTestService {
 			})
 
 			it( "returns correct response code", function() {
-				expect( this.headers.statusCode ).to.deep.equal( 200 )
+				expect( this.response.statusCode ).to.deep.equal( 200 )
 			})
 		})
 
