@@ -1,37 +1,7 @@
 const {expect} = require("chai");
-
-const EventEmitter = require("events");
-const {Delta} = require("../index");
-const DeltaClient = require("../client");
 const {get_json} = require("../promise-requests");
-
 const {Irrigation} = require("./harness");
-
-const express = require("express");
-const {promise_listening_url} = require("../express-extensions");
-
-class CallCountingService extends EventEmitter {
-	constructor() {
-		super();
-		this.callCount = 0;
-	}
-
-	async start() {
-		const app = express();
-		app.use( (req,resp) => {
-			this.callCount++;
-			resp.json({count: this.callCount});
-		})
-		app.on("listening", ( socket ) => {
-			this.serviceSocket = socket;
-		})
-		return promise_listening_url( app, 0 );
-	}
-
-	async stop(){
-		this.serviceSocket.close();
-	}
-}
+const {CallCountingService} = require("./harness");
 
 describe("given an instance of the system", function(){
 	beforeEach(async function(){
