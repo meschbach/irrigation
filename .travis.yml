@@ -7,4 +7,4 @@ jobs:
   include:
     - stage: Produce Coverage
       node_js: "11"
-      script: npm install coveralls nyc mocha-lcov-reporter && nyc ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec test && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage
+      script: npm run coverage && npm run coveralls
