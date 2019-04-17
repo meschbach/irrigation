@@ -36,19 +36,6 @@ class DeltaClient {
 		this.authHeader = "Bearer " + token;
 	}
 
-	/**
-	 * @deprecated Please use #registerTarget
-	 * @param service_name
-	 * @param port
-	 * @returns {Promise<*>}
-	 */
-	register( service_name , port ) {
-		if( !service_name ){ throw new Error("Expected service_name, is falsy") }
-		if( !port && port != 0 ){ throw new Error("Expected port, got falsy") }
-
-		return this.registerTarget("default", service_name + "-" + port, "http://localhost:" + port);
-	}
-
 	async describeIngress( name ) {
 		return new DeltaIngressResource(this.url + "/v1/ingress/"+name, this.logger.child({ingress: name}));
 	}
