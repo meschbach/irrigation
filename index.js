@@ -3,10 +3,8 @@
  */
 let http = require( 'http' );
 const https = require( 'https' );
-let request = require( 'request' );
 
 // Internal dependencies
-const Future = require("junk-bucket/future");
 const {parallel} = require("junk-bucket/future");
 
 let DeltaClient = require( './client' )
