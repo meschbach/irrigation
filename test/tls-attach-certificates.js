@@ -1,10 +1,8 @@
 const {Irrigation,CallCountingService} = require("./harness");
 const {defaultNullLogger} = require("junk-bucket/logging");
-const {formattedConsoleLog} = require("junk-bucket/logging-bunyan");
 const Future = require("junk-bucket/future");
 const selfsigned = require('selfsigned');
 const url = require('url');
-const os = require("os");
 const tls = require("tls");
 const rp = require("request-promise-native");
 
