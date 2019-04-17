@@ -4,32 +4,7 @@ const {parallel} = require("junk-bucket/future");
 const rp = require("request-promise-native");
 
 const {expect} = require("chai");
-
-//TODO: Merge with rules-integration-tests file.
-const express = require("express");
-const EventEmitter = require("events");
-class CallCountingService extends EventEmitter {
-	constructor() {
-		super();
-		this.callCount = 0;
-	}
-
-	async start() {
-		const app = express();
-		app.use( (req,resp) => {
-			this.callCount++;
-			resp.json({count: this.callCount});
-		});
-		app.on("listening", ( socket ) => {
-			this.serviceSocket = socket;
-		});
-		return promise_listening_url( app, 0 );
-	}
-
-	async stop(){
-		this.serviceSocket.close();
-	}
-}
+const {CallCountingService} = require("./harness");
 
 describe("round robin load balancing", function(){
 	beforeEach(async function(){
