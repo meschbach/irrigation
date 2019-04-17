@@ -11,22 +11,11 @@ const {parallel} = require("junk-bucket/future");
 
 let DeltaClient = require( './client' )
 let promise_post_json_request = require( './promise-requests' ).post_json
+const promise_get_request = require("./promise-requests").get_request;
 let {ExpressControlInterface} = require( './control-http' )
 const { MemoryCertificateManager } = require( './certificate-manager' );
 
 const {DeltaIngress} = require("./service/ingress");
-
-const requestPromise = require("request-promise-native");
-async function promise_get_request( url ) {
-	const options = {
-		method: "GET",
-		url,
-		simple: false,
-		resolveWithFullResponse: true
-	};
-	const result = await requestPromise( options );
-	return result;
-}
 
 const {addressOnListen} = require("junk-bucket/sockets");
 async function http_promise_listen_url( service, port, logger, protocol = "http" ){
@@ -312,7 +301,7 @@ class Delta {
 }
 
 exports.Delta = Delta
-exports.DeltaClient = DeltaClient
-exports.promise_get_request = promise_get_request
-exports.promise_post_json_request = promise_post_json_request
+exports.DeltaClient = DeltaClient;
+exports.promise_get_request = promise_get_request;
+exports.promise_post_json_request = promise_post_json_request;
 

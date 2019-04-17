@@ -1,12 +1,13 @@
 // External pacakges
-let request = require( 'request' )
+const request = require( 'request' );
+const requestPromise = require("request-promise-native");
 
 // Internal Dependencies
 const Future = require( "junk-bucket/future");
 
 //TODO: Most of these should be replaced with request-as-promised
 
-exports.post_json = ( url, body, auth ) => {
+function post_json( url, body, auth ) {
 	const result = new Future();
 	request({
 		method: 'POST',
@@ -22,7 +23,7 @@ exports.post_json = ( url, body, auth ) => {
 	return result.promised;
 }
 
-exports.get_json_raw = ( url, auth ) => {
+function get_json_raw( url, auth ) {
 	const result = new Future();
 	request({
 		method: 'GET',
@@ -38,8 +39,8 @@ exports.get_json_raw = ( url, auth ) => {
 	return result.promised;
 }
 
-exports.get_json = ( url, responseCode, authorization ) => {
-	return exports.get_json_raw( url, authorization )
+function get_json( url, responseCode, authorization ) {
+	return get_json_raw( url, authorization )
 		.then( ( response ) => {
 			let expectedCode = responseCode || 200
 			let code = response.headers.statusCode
@@ -48,7 +49,7 @@ exports.get_json = ( url, responseCode, authorization ) => {
 		})
 }
 
-exports.put_json = ( url, body, auth ) => {
+function put_json( url, body, auth ) {
 	const result = new Future();
 	request({
 		method: 'PUT',
@@ -63,3 +64,22 @@ exports.put_json = ( url, body, auth ) => {
 	})
 	return result.promised;
 }
+
+async function promise_get_request( url ) {
+	const options = {
+		method: "GET",
+		url,
+		simple: false,
+		resolveWithFullResponse: true
+	};
+	const result = await requestPromise( options );
+	return result;
+}
+
+module.exports = {
+	get_request: promise_get_request,
+	put_json,
+	get_json,
+	get_json_raw,
+	post_json
+};
