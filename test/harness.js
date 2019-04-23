@@ -2,9 +2,11 @@ const EventEmitter = require("events");
 const {Delta} = require("../index");
 const DeltaClient = require("../client");
 
-const {defaultNullLogger} = require( "junk-bucket/logging" );
+const {listen} = require("../junk"); //junk-bucket/sockets
+const {defaultNullLogger} = require( "../junk" ); //junk-bucket/logging
+
+const {Context} = require("junk-bucket/context");
 const express = require("express");
-const {promise_listening_url} = require("../express-extensions");
 
 class Irrigation extends EventEmitter {
 	constructor( logger = defaultNullLogger ){
@@ -31,22 +33,21 @@ class CallCountingService extends EventEmitter {
 	constructor() {
 		super();
 		this.callCount = 0;
+		//TODO: This should probably be fed in from the environment
+		this.context = new Context("call-counting", defaultNullLogger);
 	}
 
-	async start() {
+	async start( ) {
 		const app = express();
 		app.use( (req,resp) => {
 			this.callCount++;
 			resp.json({count: this.callCount});
 		});
-		app.on("listening", ( socket ) => {
-			this.serviceSocket = socket;
-		});
-		return promise_listening_url( app, 0 );
+		return "http://" + await listen(this.context, app, 0);
 	}
 
 	async stop(){
-		this.serviceSocket.close();
+		await this.context.cleanup();
 	}
 }
 

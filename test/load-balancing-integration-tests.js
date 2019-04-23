@@ -1,5 +1,4 @@
 const {Irrigation} = require("./harness");
-const {promise_listening_url} = require("../express-extensions");
 const {parallel} = require("junk-bucket/future");
 const rp = require("request-promise-native");
 
