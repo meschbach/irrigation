@@ -7,6 +7,7 @@
 const delta = require( "./index" );
 //TODO: To be moved to junk-bucket
 const { service  } = require("junk-bucket/service");
+const {MetricsPlatform, logMetricSink} = require("./junk");
 
 let args = require( 'yargs' )
 	.option( 'ttl', { description: 'Terminate the serivce after a set period of seconds.' } )
@@ -23,7 +24,8 @@ if( args.ttl ) {
 
 service( "irrigation", {
 	launch: async (logger) => {
-		const core = new delta.Delta( logger );
+		const metricsPlatform = new MetricsPlatform(logMetricSink(logger));
+		const core = new delta.Delta( logger, metricsPlatform );
 		const url = await core.start(  args["control-http-port"], args["control-http-ip"] );
 		logger.info("Delta started at ", url);
 		return core;

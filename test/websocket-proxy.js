@@ -9,6 +9,7 @@ const {promiseEvent} = require("junk-bucket/future");
 const Future = require("junk-bucket/future");
 
 const {defaultNullLogger}  = require("junk-bucket/logging");
+const {newLoggingMetricsPlatform} = require("../junk");
 
 const http = require("http");
 const {addressOnListen} = require("junk-bucket/sockets");
@@ -35,7 +36,9 @@ describe( "When configuring an ingress for websockets", function() {
 		this.targetService = service;
 
 		//TODO: Use Irrigation facade
-		this.proxy = new delta.Delta( defaultNullLogger );
+		const logger = defaultNullLogger;
+		const metrics = newLoggingMetricsPlatform(logger);
+		this.proxy = new delta.Delta( logger, metrics );
 
 		this.proxyControl = await this.proxy.start();
 		this.client = new DeltaClient( this.proxyControl );

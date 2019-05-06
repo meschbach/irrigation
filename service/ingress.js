@@ -37,6 +37,7 @@ class DeltaIngress {
 
 	//TODO: Requested and upgrade shouldn't duplicate code
 	requested( request, response ){
+		const monitor = this.mesh.metrics.measure("request");
 		//TODO: This structure can be improved for performance
 		const targetPoolName = runRules( this.targetPoolRules, this.defaultPool, request );
 		this.logger.debug("Target pool name: ", targetPoolName);
@@ -50,22 +51,26 @@ class DeltaIngress {
 			response.statusCode = 503;
 			response.setHeader("Content-Type","text/plain");
 			response.end("No targets found.");
+			monitor.done();
 		} else {
 			const lb = targetPool.loadBalancer;
 			if( !lb || lb.isEmpty) {
 				response.statusCode = 503;
 				response.end("No targets in the pool " + targetPoolName);
+				monitor.done();
 				return;
 			}
 
 			const targetName = targetPool.loadBalancer.next();
 			const target = targets[targetName];
 			assert(target);
+			monitor.done();
 			this.wire_proxy.proxy( target, request, response )
 		}
 	}
 
 	upgrade( request, socket, head ){
+		const monitor = this.mesh.metrics.measure("upgrade");
 		//TODO: This structure can be improved for performance
 		const targetPool = this.mesh.targetPools[this.defaultPool] || {};
 		const targets = Object.values(targetPool.targets || {});
@@ -74,10 +79,12 @@ class DeltaIngress {
 			const uri = request.url;
 			const host = request.headers["host"];
 			this.logger.warn( "No targets found in pool",  {targetPool: this.defaultPool, method, uri, host });
+			monitor.done();
 			socket.end();
 		} else {
 			const target = targets[0];
 			this.logger.debug( "Dispatching to ", {targets, target} );
+			monitor.done();
 			this.wire_proxy.upgrade( target, request, socket, head )
 		}
 	}

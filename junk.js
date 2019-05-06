@@ -39,10 +39,64 @@ async function listen(context, server, port, bindToAddress){
 	return address.host + ":" + address.port;
 }
 
+/**********************************************************
+ * Metrics
+ **********************************************************/
+function startMetric( sink, name, tags ){
+	const start = Date.now();
+
+	const point = {};
+	point.done = () => {
+		const elapsedTime = Date.now() - start;
+		sink(name, elapsedTime, tags);
+	};
+	return point;
+}
+
+function promiseMetric( sink, name, tags, promise ){
+	const point = startMetric(sink,name,tags);
+	promise.then( () => {
+		point.done();
+	}, () => {
+		point.done();
+	});
+	return promise;
+}
+
+function logMetricSink( logger ){
+	return function (name, elapsedTime, tags) {
+		logger.info("Performance", {name,elapsedTime,tags});
+	}
+}
+
+class MetricsPlatform {
+	constructor(sink) {
+		this.sink = sink;
+	}
+
+	measure(name, tags){
+		return startMetric(this.sink, name, tags);
+	}
+
+	promise(name, tags, promise) {
+		return promiseMetric(this.sink, name, tags, promise);
+	}
+}
+
+function newLoggingMetricsPlatform(logger){
+	return new MetricsPlatform(logMetricSink(logger));
+}
+
 /***********************************************************************************************************************
  * Exports
  **********************************************************************************************************************/
 module.exports = {
 	listen,
-	defaultNullLogger
+	defaultNullLogger,
+
+	startMetric,
+	promiseMetric,
+	logMetricSink,
+	MetricsPlatform,
+	newLoggingMetricsPlatform
 };

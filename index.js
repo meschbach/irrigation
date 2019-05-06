@@ -39,8 +39,12 @@ const {NHPFactory} = require("./service/proxy-nph");
  * Top level proxy system state manager
  */
 class Delta {
-	constructor( logger ) {
+	constructor( logger, metrics ) {
+		assert(logger);
+		assert(metrics);
+
 		this.logger = logger;
+		this.metrics = metrics;
 
 		this.ingress_controllers = {}
 		this.targets = {}
