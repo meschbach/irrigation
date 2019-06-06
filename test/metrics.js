@@ -11,7 +11,7 @@ describe("Metrics", function(){
 		},"timing", {});
 		await delay(5);
 		metric.done();
-		expect(elapsed).to.be.gt(5);
+		expect(elapsed).to.be.gte(5);
 	});
 
 	it("will track a promise", async function() {
