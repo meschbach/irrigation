@@ -55,12 +55,12 @@ describe("path routing", function(){
 
 		it("routes to the target in Pool A", function(){
 			expect( this.targetA.callCount ).to.eq(1);
-		})
+		});
 		it("does not route to the default Pool", function(){
 			expect( this.defaultTarget.callCount ).to.eq(0);
-		})
+		});
 		it("does not route to the Pool B", function(){
 			expect( this.targetB.callCount ).to.eq(0);
-		})
+		});
 	});
 });
