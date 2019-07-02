@@ -18,6 +18,15 @@ const defaultNullLogger = Object.freeze({
 	child: function() { return Object.freeze(Object.assign({}, defaultNullLogger)); }
 });
 
+function testLogger( name, verbose ){
+	if( verbose ){
+		const {formattedConsoleLog} = require("junk-bucket/logging-bunyan");
+		return formattedConsoleLog(name);
+	} else {
+		return defaultNullLogger;
+	}
+}
+
 /**********************************************************
  * sockets
  **********************************************************/
@@ -43,49 +52,52 @@ async function listen(context, server, port, bindToAddress){
 /**********************************************************
  * Metrics
  **********************************************************/
-function startMetric( sink, name, tags ){
+const assert = require("assert");
+function startMetric( watcher ){
+	assert(watcher.observe);
 	const start = Date.now();
 
 	const point = {};
 	point.done = () => {
 		const elapsedTime = Date.now() - start;
-		sink(name, elapsedTime, tags);
+		watcher.observe(elapsedTime);
 	};
 	return point;
 }
 
 function promiseMetric( sink, name, tags, promise ){
-	const point = startMetric(sink,name,tags);
 	promise.then( () => {
-		point.done();
+		sink.done();
 	}, () => {
-		point.done();
+		sink.done();
 	});
 	return promise;
 }
 
-function logMetricSink( logger ){
-	return function (name, elapsedTime, tags) {
-		logger.info("Performance", {name,elapsedTime,tags});
-	}
-}
-
+const metricsSystem = require("prom-client");
 class MetricsPlatform {
-	constructor(sink) {
-		this.sink = sink;
+	constructor(registry) {
+		this.registry = registry;
+		this.seen = {}
 	}
 
 	measure(name, tags){
-		return startMetric(this.sink, name, tags);
+		if( !this.seen[name]) {
+			this.seen[name] = new metricsSystem.Histogram({name, help: "TODO", labels: tags, registers:[this.registry]});
+		}
+		const watcher = this.seen[name];
+		return startMetric(watcher, name, tags);
 	}
 
 	promise(name, tags, promise) {
-		return promiseMetric(this.sink, name, tags, promise);
+		const sink = this.measure(name,tags);
+		return promiseMetric(sink, name, tags, promise);
 	}
 }
 
-function newLoggingMetricsPlatform(logger){
-	return new MetricsPlatform(logMetricSink(logger));
+function newMetricsPlatform(){
+	const registry = new metricsSystem.Registry();
+	return new MetricsPlatform(registry);
 }
 
 /***********************************************************************************************************************
@@ -94,10 +106,10 @@ function newLoggingMetricsPlatform(logger){
 module.exports = {
 	listen,
 	defaultNullLogger,
+	testLogger,
 
 	startMetric,
 	promiseMetric,
-	logMetricSink,
 	MetricsPlatform,
-	newLoggingMetricsPlatform
+	newMetricsPlatform
 };

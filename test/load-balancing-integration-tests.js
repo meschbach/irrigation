@@ -5,9 +5,11 @@ const rp = require("request-promise-native");
 const {expect} = require("chai");
 const {CallCountingService} = require("./harness");
 
+const {testLogger} = require("../junk");
+
 describe("round robin load balancing", function(){
 	beforeEach(async function(){
-		this.irrigation = new Irrigation( );
+		this.irrigation = new Irrigation( testLogger("round-robin integration", false));
 		await this.irrigation.start();
 
 		this.targetA = new CallCountingService();
@@ -26,7 +28,16 @@ describe("round robin load balancing", function(){
 	});
 	beforeEach(async function(){
 		const callTarget = async () =>{
+			try {
 			return await rp(this.ingressURL);
+			}catch(e){
+				if( e.statusCode != 200 ){
+					console.error("Failed to make the call: ", e.statusCode, e.statueMessage);
+					throw e;
+				}else {
+					throw e;
+				}
+			}
 		};
 		const results = [];
 		for( let i = 0 ; i < 5; i++ ){
@@ -36,9 +47,9 @@ describe("round robin load balancing", function(){
 	});
 
 	afterEach(async function(){
-		this.targetB.stop();
-		this.targetA.stop();
-		await this.irrigation.stop();
+		if( this.targetB ) this.targetB.stop();
+		if( this.targetA ) this.targetA.stop();
+		if( this.irrigation ) await this.irrigation.stop();
 	});
 
 	it("sends the correct number of requests to target A", function(){

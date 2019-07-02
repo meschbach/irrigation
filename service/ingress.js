@@ -37,7 +37,7 @@ class DeltaIngress {
 
 	//TODO: Requested and upgrade shouldn't duplicate code
 	requested( request, response ){
-		const monitor = this.mesh.metrics.measure("request");
+		const monitor = this.mesh.metrics.measure("ingress");
 		//TODO: This structure can be improved for performance
 		const targetPoolName = runRules( this.targetPoolRules, this.defaultPool, request );
 		this.logger.debug("Target pool name: ", targetPoolName);
