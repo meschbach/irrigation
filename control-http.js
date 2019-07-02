@@ -41,9 +41,9 @@ class ExpressControlInterface {
 		let service = make_async( express() )
 		service.use( morgan( 'short', {
 			stream: {write: (msg) => {
-				this.logger.info(msg);
+				this.logger.info(msg.trim());
 			} }
-		} ) )
+		} ) );
 		service.use( (req,resp, next ) => {
 			if( this.authorizeRequests ){
 				this.authorizeRequests(req,resp,next);
