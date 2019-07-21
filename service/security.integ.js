@@ -1,4 +1,4 @@
-const {Irrigation} = require("./harness");
+const {Irrigation} = require("../test/harness");
 const {expect} = require("chai");
 
 const crypto = require("crypto");

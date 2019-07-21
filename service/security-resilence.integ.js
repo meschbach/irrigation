@@ -2,7 +2,7 @@ const chai = require( 'chai' );
 const expect = chai.expect;
 
 const assert = require("assert");
-const {Irrigation} = require("./harness");
+const {Irrigation} = require("../test/harness");
 
 describe( "Security: Ensure service is resilent to errors", function() {
 	beforeEach(async function(){

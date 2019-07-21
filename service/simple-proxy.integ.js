@@ -9,7 +9,7 @@ let morgan = require( 'morgan' )
 
 const Future = require("junk-bucket/future");
 
-const {Irrigation} = require("./harness");
+const {Irrigation} = require("../test/harness");
 
 let delta = require( "../index" )
 let promise_get_request = delta.promise_get_request

@@ -1,4 +1,4 @@
-const {Irrigation,CallCountingService} = require("./harness");
+const {Irrigation,CallCountingService} = require("../test/harness");
 const {defaultNullLogger} = require("junk-bucket/logging");
 const Future = require("junk-bucket/future");
 const selfsigned = require('selfsigned');

@@ -1,6 +1,6 @@
 const {expect} = require("chai");
 
-const {Irrigation} = require("./harness");
+const {Irrigation} = require("../test/harness");
 const {addressOnListen} = require("junk-bucket/sockets");
 
 const rp = require("request-promise-native");

@@ -6,9 +6,9 @@
 	"repository": "github.com/meschbach/irrigation",
 	"license": "MIT",
 	"scripts": {
-		"test": "mocha",
+		"test": "mocha test './{,!(node_modules)/**/}*.units.js' './{,!(node_modules)/**/}*.integ.js' --recursive",
 		"start": "node service.js",
-		"coverage": "nyc --reporter=html --reporter=text mocha",
+		"coverage": "nyc --reporter=html --reporter=text mocha  test './{,!(node_modules)/**/}*.units.js' './{,!(node_modules)/**/}*.integ.js' --recursive",
 		"coveralls": "nyc report --reporter=text-lcov | coveralls"
 	},
 	"devDependencies": {

@@ -1,9 +1,9 @@
-const {Irrigation} = require("./harness");
+const {Irrigation} = require("../test/harness");
 const {parallel} = require("junk-bucket/future");
 const rp = require("request-promise-native");
 
 const {expect} = require("chai");
-const {CallCountingService} = require("./harness");
+const {CallCountingService} = require("../test/harness");
 
 const {testLogger} = require("../junk");
 

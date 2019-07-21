@@ -1,7 +1,7 @@
 const {expect} = require("chai");
 const {get_json} = require("../promise-requests");
-const {Irrigation} = require("./harness");
-const {CallCountingService} = require("./harness");
+const {Irrigation} = require("../test/harness");
+const {CallCountingService} = require("../test/harness");
 
 describe("given an instance of the system", function(){
 	beforeEach(async function(){

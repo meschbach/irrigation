@@ -1,5 +1,5 @@
 const {expect} = require("chai");
-const {compileRules, runRules } = require("../service/rules");
+const {compileRules, runRules } = require("./rules");
 
 describe("rule compilation", function(){
 	describe("with an unknown rule", function () {

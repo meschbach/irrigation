@@ -1,5 +1,5 @@
 const {expect} = require("chai");
-const {RoundRobinScheduler} = require("../service/round-robin");
+const {RoundRobinScheduler} = require("./round-robin");
 
 function doRequest(){
 	this.result = this.scheduler.next();
