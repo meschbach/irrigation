@@ -22,7 +22,11 @@ async function http_promise_listen_url( service, port, logger, protocol = "http"
 	try {
 		const listener = addressOnListen(service, port, bindHost);
 		const rawAddress = await listener.address;
-		const host = rawAddress.host;
+		let host = rawAddress.host;
+		if( host == bindHost ){
+			logger.trace("Binding host is all, replying with loopback");
+			host = require("os").networkInterfaces().lo0[0].address;
+		}
 		const url = protocol + "://" + host + ":" + rawAddress.port;
 		logger.info("Listening on ", url);
 		return url;
@@ -39,12 +43,13 @@ const {NHPFactory} = require("./service/proxy-nph");
  * Top level proxy system state manager
  */
 class Delta {
-	constructor( logger, metrics ) {
+	constructor( logger, context ) {
 		assert(logger);
-		assert(metrics);
+		assert(context);
+		assert(context.cleanup);
 
 		this.logger = logger;
-		this.metrics = metrics;
+		this.context = context;
 
 		this.ingress_controllers = {}
 		this.targets = {}
@@ -68,7 +73,8 @@ class Delta {
 	start( port, iface ) {
 		this.logger.info( "Starting new HTTP service", {port,iface} );
 
-		let controller = new ExpressControlInterface( this, this.logger.child({component: "http-api", port, iface}))
+		const controlLogger = this.logger.child({component: "http-api", port, iface});
+		let controller = new ExpressControlInterface( this, controlLogger , this.context.tracer );
 		this.controlInterface = controller;
 		return controller.start( port, iface )
 	}
@@ -80,6 +86,7 @@ class Delta {
 		Object.values(this.ingress_controllers).forEach((controller) => {
 			controller.end();
 		});
+		this.context.cleanup();
 	}
 
 	/*

@@ -5,7 +5,7 @@ const {get_json} = require("../promise-requests");
 
 const {CallCountingService } = require("../test/harness");
 
-const {defaultNullLogger} = require( "junk-bucket/logging" );
+const {createTestLogger} = require( "./test-junk" );
 
 describe("path routing", function(){
 	beforeEach( async function(){
@@ -18,7 +18,7 @@ describe("path routing", function(){
 		this.defaultTarget = new CallCountingService();
 		const defaultTargetURL = await this.defaultTarget.start();
 
-		this.irrigation = new Irrigation( defaultNullLogger );
+		this.irrigation = new Irrigation( createTestLogger("path routing", false) );
 		await this.irrigation.start();
 
 		const client = this.irrigation.client();

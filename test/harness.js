@@ -3,7 +3,7 @@ const {Delta} = require("../index");
 const DeltaClient = require("../client");
 
 const {listen} = require("../junk"); //junk-bucket/sockets
-const {defaultNullLogger, newMetricsPlatform} = require( "../junk" ); //junk-bucket/logging}
+const {defaultNullLogger} = require( "../junk" ); //junk-bucket/logging}
 
 const {Context} = require("junk-bucket/context");
 const express = require("express");
@@ -12,8 +12,8 @@ class Irrigation extends EventEmitter {
 	constructor( logger = defaultNullLogger ){
 		super();
 		this.logger = logger;
-		const metrics = newMetricsPlatform();
-		this.proxy = new Delta( logger, metrics );
+		const context = new Context("irrigation", logger);
+		this.proxy = new Delta( logger, context );
 	}
 
 	async start(){

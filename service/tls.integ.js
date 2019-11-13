@@ -1,5 +1,4 @@
 const {Irrigation,CallCountingService} = require("../test/harness");
-const {defaultNullLogger} = require("junk-bucket/logging");
 const Future = require("junk-bucket/future");
 const selfsigned = require('selfsigned');
 const url = require('url');
@@ -8,11 +7,13 @@ const rp = require("request-promise-native");
 
 const {expect} = require("chai");
 
+const {createTestLogger}  = require("./test-junk");
+
 describe("for tls ingress", function(){
 	beforeEach( async function(){
-		const logger = defaultNullLogger; //formattedConsoleLog("tls-tests");
+		const logger = require("./test-junk").createTestLogger("tls", false);
 		//generate certificate
-		const attrs = [{name: "commonName", value: "localhost"}]
+		const attrs = [{name: "commonName", value: "localhost"}];
 		this.asymmetricKey = selfsigned.generate(attrs, { days: 1 });
 
 		//build system
@@ -25,9 +26,9 @@ describe("for tls ingress", function(){
 	});
 
 	afterEach( async function(){
-		await this.system.stop();
-		await this.counter.stop();
-	})
+		if(this.system) await this.system.stop();
+		if(this.counter) await this.counter.stop();
+	});
 
 	describe("for the secure ingress", function(){
 		beforeEach( async function(){

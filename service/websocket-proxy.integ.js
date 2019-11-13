@@ -5,11 +5,11 @@ const WebSocket = require('ws');
 const DeltaClient = require("../client");
 let delta = require( "../index" );
 
+const {Context} = require("junk-bucket/context");
 const {promiseEvent} = require("junk-bucket/future");
 const Future = require("junk-bucket/future");
 
-const {defaultNullLogger}  = require("junk-bucket/logging");
-const {newMetricsPlatform} = require("../junk");
+const {createTestLogger}  = require("./test-junk");
 
 const http = require("http");
 const {addressOnListen} = require("junk-bucket/sockets");
@@ -36,9 +36,9 @@ describe( "When configuring an ingress for websockets", function() {
 		this.targetService = service;
 
 		//TODO: Use Irrigation facade
-		const logger = defaultNullLogger;
-		const metrics = newMetricsPlatform(logger);
-		this.proxy = new delta.Delta( logger, metrics );
+		const logger = createTestLogger("websocket-proxy", false);
+		const context = new Context("websocket-proxy", logger);
+		this.proxy = new delta.Delta( logger, context );
 
 		this.proxyControl = await this.proxy.start();
 		this.client = new DeltaClient( this.proxyControl );
@@ -55,6 +55,7 @@ describe( "When configuring an ingress for websockets", function() {
 		await badIngress.useDefaultPool("ws-bad");
 
 		this.wsIngressURL = await ingress.address();
+		console.log("Ingress URL", this.wsIngressURL);
 		await ingress.useDefaultPool("ws-pool");
 
 		//503 backend
@@ -74,9 +75,9 @@ describe( "When configuring an ingress for websockets", function() {
 		this.wsUpgradeURL = await upgradeIngress.address();
 	});
 	afterEach( async function(){
-		await this.httpUpgradeBind.stop();
-		await this.proxy.stop();
-		await this.targetService.close();
+		if( this.httpUpgradeBind ) await this.httpUpgradeBind.stop();
+		if( this.proxy ) await this.proxy.stop();
+		if( this.targetService )await this.targetService.close();
 	});
 
 	it( "relays the websocket connection", async function () {
@@ -98,11 +99,15 @@ describe( "When configuring an ingress for websockets", function() {
 
 	it( "allows the server to send the client a message", async function(){
 		const url = this.wsIngressURL;
-		const ws = new WebSocket(url);
-		const resultPromise = promiseEvent(ws, "message")
-		await promiseEvent(ws, "open");
-		const result = await resultPromise
-		expect(result).to.be.eq("connected");
+		try {
+			const ws = new WebSocket(url);
+			const resultPromise = promiseEvent(ws, "message");
+			await promiseEvent(ws, "open");
+			const result = await resultPromise;
+			expect(result).to.be.eq("connected");
+		}catch(e){
+			throw new Error(e.message);
+		}
 	} );
 
 	describe("misconfigured upstreams", function(){

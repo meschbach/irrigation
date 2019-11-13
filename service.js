@@ -5,6 +5,9 @@
  */
 
 const delta = require( "./index" );
+
+const {Context} = require("junk-bucket/context");
+
 //TODO: To be moved to junk-bucket
 const { service  } = require("junk-bucket/service");
 const {MetricsPlatform, logMetricSink} = require("./junk");
@@ -22,10 +25,27 @@ if( args.ttl ) {
 	}, args.ttl * 1000 )
 }
 
-service( "irrigation", {
+const {initTracerFromEnv} = require('jaeger-client');
+async function setupTracer(context){
+	const config = {
+		serviceName: process.env.JAEGER_SERVICE_NAME || context.name
+	};
+	const options = {
+		logger: context.logger
+	};
+
+	const tracer = initTracerFromEnv(config, options);
+	context.tracer = tracer;
+	return tracer;
+}
+
+const name = "Irrigation";
+service( name, {
 	launch: async (logger) => {
-		const metricsPlatform = new MetricsPlatform(logMetricSink(logger));
-		const core = new delta.Delta( logger, metricsPlatform );
+		const context = new Context(name, logger);
+		await setupTracer(context);
+
+		const core = new delta.Delta( logger, context );
 		const url = await core.start(  args["control-http-port"], args["control-http-ip"] );
 		logger.info("Delta started at ", url);
 		return core;

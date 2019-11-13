@@ -11,6 +11,7 @@ const tls = require("tls");
 let bodyParser = require('body-parser');
 let express = require( 'express' )
 let morgan = require( 'morgan' )
+const expressOpenTracing = require("express-opentracing").default;
 
 // Internal dependencies
 const Future = require("junk-bucket/future");
@@ -25,10 +26,11 @@ const {compileRules} = require("./service/rules");
  * Control Plane
  */
 class ExpressControlInterface {
-	constructor( delta, logger ) {
+	constructor( delta, logger, tracer ) {
 		this.logger = logger;
 
-		this.delta = delta
+		this.delta = delta;
+		this.tracer = tracer;
 		this.authorizeRequests = undefined;
 	}
 
@@ -38,7 +40,8 @@ class ExpressControlInterface {
 		port = port || 0
 		if( this.is_running() ) { return this.start_promise; }
 
-		let service = make_async( express() )
+		let service = make_async( express() );
+		service.use( expressOpenTracing({tracer: this.tracer}) );
 		service.use( morgan( 'short', {
 			stream: {write: (msg) => {
 				this.logger.info(msg.trim());
@@ -85,7 +88,7 @@ class ExpressControlInterface {
 				resp.statusCode = 409;
 				return resp.json( { errors: ["Ingress by that name already exists"] } );
 			}
-			this.logger.info("Validated request; looks reasonable")
+			this.logger.info("Validated request; looks reasonable",{wait});
 
 			// Perform operation
 			try {
