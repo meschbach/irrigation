@@ -24,8 +24,12 @@ async function http_promise_listen_url( service, port, logger, protocol = "http"
 		const rawAddress = await listener.address;
 		let host = rawAddress.host;
 		if( host == bindHost ){
+			const ifaces = require("os").networkInterfaces();
+			const names = Object.keys(ifaces);
+			const randomIface = ifaces[names[0]];
+			const address = randomIface[0].address;
 			logger.trace("Binding host is all, replying with loopback");
-			host = require("os").networkInterfaces().lo0[0].address;
+			host = address;
 		}
 		const url = protocol + "://" + host + ":" + rawAddress.port;
 		logger.info("Listening on ", url);
