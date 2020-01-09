@@ -9,8 +9,8 @@ const tls = require("tls");
 
 //External depedencies
 let bodyParser = require('body-parser');
-let express = require( 'express' )
-let morgan = require( 'morgan' )
+let express = require( 'express' );
+let morgan = require( 'morgan' );
 const expressOpenTracing = require("express-opentracing").default;
 
 // Internal dependencies
@@ -37,7 +37,7 @@ class ExpressControlInterface {
 	is_running(){ return this.http_service != undefined }
 
 	start( port, address = "localhost" ) {
-		port = port || 0
+		port = port || 0;
 		if( this.is_running() ) { return this.start_promise; }
 
 		let service = make_async( express() );
@@ -54,7 +54,7 @@ class ExpressControlInterface {
 				next();
 			}
 		});
-		service.use( bodyParser.json() )
+		service.use( bodyParser.json() );
 
 		service.a_get( '/v1/ingress', async ( req, resp ) => {
 			let ingress_points = await this.delta.list_ingress();
