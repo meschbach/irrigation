@@ -34,4 +34,4 @@ function runRules( compiledRules, defaultTarget, request ){
 module.exports = {
 	compileRules,
 	runRules
-}
+};
