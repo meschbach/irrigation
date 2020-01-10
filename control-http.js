@@ -352,8 +352,13 @@ class ExpressControlInterface {
 			const targetName = req.params.name;
 
 			const url = req.body.url;
-			if( !url ){
-				return resp.sendStatus(422);
+			try {
+				const parsedURL = new URL(url);
+				if( !parsedURL.host ) {
+					return resp.sendStatus(422, "URL host is falsy");
+				}
+			}catch(e){
+				return resp.sendStatus(422, "URL isn't parsable: " + e.message);
 			}
 
 			const pools = this.delta.targetPools;
@@ -371,7 +376,7 @@ class ExpressControlInterface {
 			pool.targets[targetName] = {
 				url: url,
 				inService: true
-			}
+			};
 			pool.loadBalancer.addTarget(targetName);
 
 			resp.json({ ok: true, targetPool: pool })
