@@ -317,6 +317,9 @@ class ExpressControlInterface {
 
 		service.a_put( '/v1/target-pool/:name', ( req, resp ) => {
 			const name = req.params.name;
+			if( name.length === 0 ){
+				return resp.sendStatus(422, "Name must be a string");
+			}
 
 			const pools = this.delta.targetPools;
 			const pool = pools[name];
