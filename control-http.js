@@ -114,15 +114,15 @@ class ExpressControlInterface {
 		});
 
 		service.get( '/v1/ingress/:name', ( req, resp ) => {
-			let name = req.params.name
-			let ingress = this.delta.find_ingress( name )
+			let name = req.params.name;
+			let ingress = this.delta.find_ingress( name );
 			if( !ingress ){
 				resp.statusCode = 404;
 				return resp.end();
 			}
 
 			ingress.listening.then( (address) => {
-				resp.statusCode = 200
+				resp.statusCode = 200;
 				resp.json({ address: address, rules: ingress.rules })
 			});
 		} );
@@ -141,36 +141,36 @@ class ExpressControlInterface {
 
 		//TODO: Deprecated in 0.3 series
 		service.a_post( '/v1/ingress/:name', ( req, resp ) => {
-			let ingress_name = req.params.name
-			let targets = req.body.add_targets
+			let ingress_name = req.params.name;
+			let targets = req.body.add_targets;
 
-			this.logger.info( "delta-d: Requested to use ", targets, " with ", ingress_name )
+			this.logger.info( "delta-d: Requested to use ", targets, " with ", ingress_name );
 
 			if( !targets ) {
 				resp.statusCode = 422;
 				return resp.json( { errors: { targets: ["missing"] } } );
 			}
 
-			let ingress = this.delta.find_ingress( ingress_name )
+			let ingress = this.delta.find_ingress( ingress_name );
 			if( !ingress ){
 				resp.statusCode = 404;
 				return resp.end()
 			}
 
 			targets.forEach( ( target ) => {
-				this.logger.info( "delta-d: Registering ", target, " with ", ingress_name )
-				ingress.target( target )
-			})
+				this.logger.info( "delta-d: Registering ", target, " with ", ingress_name );
+				ingress.target( target );
+			});
 
-			resp.statusCode = 200
+			resp.statusCode = 200;
 			resp.json( { status: "ok" })
-		})
+		});
 
 		service.a_post( '/v1/ingress/:name/default-pool', ( req, resp ) => {
-			let ingress_name = req.params.name
-			let defaultPool = req.body.defaultPool
+			let ingress_name = req.params.name;
+			let defaultPool = req.body.defaultPool;
 
-			this.logger.info( "delta-d: Requested to use pool ", defaultPool, " with ", ingress_name )
+			this.logger.info( "delta-d: Requested to use pool ", defaultPool, " with ", ingress_name );
 
 			if( !defaultPool ) {
 				resp.statusCode = 422;
@@ -225,7 +225,7 @@ class ExpressControlInterface {
 			ingress.serverSocket.sni[ serverName ] = tlsContext;
 			resp.status(200);
 			resp.json({ok: true});
-		})
+		});
 
 		/*********************************************
 		 * Rules API
@@ -233,7 +233,7 @@ class ExpressControlInterface {
 		service.a_put( '/v1/ingress/:name/routing', ( req, resp ) => {
 			const ingress_name = req.params.name;
 
-			let ingress = this.delta.find_ingress( ingress_name )
+			let ingress = this.delta.find_ingress( ingress_name );
 			if( !ingress ){
 				resp.statusCode = 404;
 				return resp.end()

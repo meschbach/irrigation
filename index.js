@@ -116,14 +116,14 @@ class Delta {
 				socket.end();
 			}
 		});
-		let whenListening = http_promise_listen_url( server, port, this.logger.child({promise: "ingress-url"}) )
+		let whenListening = http_promise_listen_url( server, port, this.logger.child({promise: "ingress-url"}) );
 
-		let wire_factory = this.wire_proxy_factories[ wire_proxy_name || "hand" ]
+		let wire_factory = this.wire_proxy_factories[ wire_proxy_name || "hand" ];
 		if( !wire_factory ){ throw new Error( "No such wire proxy registered: " + wire_proxy_name ); }
 
-		let wire_proxy = wire_factory.produce( {} )
-		const ingress = new DeltaIngress( this.logger.child({ingress: name, port: port}), whenListening, this, wire_proxy, server )
-		this.ingress_controllers[ name ] = ingress
+		let wire_proxy = wire_factory.produce( {} );
+		const ingress = new DeltaIngress( this.logger.child({ingress: name, port: port}), whenListening, this, wire_proxy, server );
+		this.ingress_controllers[ name ] = ingress;
 		return ingress
 	}
 
