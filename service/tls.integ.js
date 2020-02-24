@@ -1,5 +1,5 @@
 const {Irrigation,CallCountingService} = require("../test/harness");
-const Future = require("junk-bucket/future");
+const {Future} = require("junk-bucket/future");
 const selfsigned = require('selfsigned');
 const url = require('url');
 const tls = require("tls");

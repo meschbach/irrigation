@@ -7,7 +7,7 @@ let delta = require( "../index" );
 
 const {Context} = require("junk-bucket/context");
 const {promiseEvent} = require("junk-bucket/future");
-const Future = require("junk-bucket/future");
+const {Future} = require("junk-bucket/future");
 
 const {createTestLogger}  = require("./test-junk");
 

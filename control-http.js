@@ -14,7 +14,7 @@ let morgan = require( 'morgan' );
 const expressOpenTracing = require("express-opentracing").default;
 
 // Internal dependencies
-const Future = require("junk-bucket/future");
+const {Future} = require("junk-bucket/future");
 const {make_async} = require("junk-bucket/express");
 
 const jwt = require("jsonwebtoken");

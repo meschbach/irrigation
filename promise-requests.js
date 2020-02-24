@@ -3,7 +3,7 @@ const request = require( 'request' );
 const requestPromise = require("request-promise-native");
 
 // Internal Dependencies
-const Future = require( "junk-bucket/future");
+const {Future} = require( "junk-bucket/future");
 
 //TODO: Most of these should be replaced with request-as-promised
 

@@ -7,7 +7,7 @@ let expect = chai.expect
 let express = require( 'express' )
 let morgan = require( 'morgan' )
 
-const Future = require("junk-bucket/future");
+const {Future} = require("junk-bucket/future");
 
 const {Irrigation} = require("../test/harness");
 
