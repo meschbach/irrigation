@@ -355,10 +355,12 @@ class ExpressControlInterface {
 			try {
 				const parsedURL = new URL(url);
 				if( !parsedURL.host ) {
-					return resp.sendStatus(422, "URL host is falsy");
+					resp.sendStatus(422, "URL host is falsy");
+					return resp.end({errors: ["URL host returned falsy"]});
 				}
 			}catch(e){
-				return resp.sendStatus(422, "URL isn't parsable: " + e.message);
+				resp.sendStatus(422, "URL isn't parsable: " + e.message);
+				return resp.end({errors: ["URL wasn't parsable: " + e.message]});
 			}
 
 			const pools = this.delta.targetPools;
@@ -371,7 +373,8 @@ class ExpressControlInterface {
 			}
 
 			if( pool[targetName] ){
-				return resp.sendStatus(409);
+				resp.sendStatus(409);
+				return resp.end();
 			}
 			pool.targets[targetName] = {
 				url: url,
