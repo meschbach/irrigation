@@ -85,7 +85,7 @@ function configureTargetCommands( yargs ){
 		y.positional("pool", {description: "The name to of the new target pool", default: "default"})
 	}, (args) => {
 		configureClient( args ).describeTargetPool(args.pool)
-			.then( (pools) => { console.log(pools) },
+			.then( (response) => { console.log(response.targetPool) },
 				(error) => { console.error(error) })
 	});
 
