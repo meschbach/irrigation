@@ -138,7 +138,7 @@ class Delta {
 			cert: socketOptions.cert,
 			SNICallback: (servername, cb) => {
 				const ctx = server.sni[servername];
-				this.logger.debug("TLS SNI request", {name,port,servername,cert: ctx.cert});
+				this.logger.debug("TLS SNI request", {name,port,servername,cert: (ctx||{}).cert});
 				cb(null,ctx);
 			}
 		};
