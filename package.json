@@ -14,9 +14,9 @@
 	"devDependencies": {
 		"chai": "4.2.0",
 		"chai-as-promised": "7.1.1",
-		"coveralls": "3.0.9",
-		"mocha": "7.0.1",
-		"nyc": "15.0.0",
+		"coveralls": "3.1.0",
+		"mocha": "8.0.1",
+		"nyc": "15.1.0",
 		"selfsigned": "1.10.7"
 	},
 	"dependencies": {
@@ -25,17 +25,17 @@
 		"bunyan-format": "0.2.1",
 		"express": "4.17.1",
 		"express-opentracing": "git+https://github.com/meschbach/javascript-express.git#production",
-		"http-proxy": "1.18.0",
-		"jaeger-client": "3.17.2",
+		"http-proxy": "1.18.1",
+		"jaeger-client": "3.18.0",
 		"jsonwebtoken": "8.5.1",
-		"junk-bucket": "1.4.1",
-		"morgan": "1.9.1",
+		"junk-bucket": "1.5.2",
+		"morgan": "1.10.0",
 		"opentracing": "^0.14.4",
 		"prom-client": "12.0.0",
 		"request": "2.88.2",
 		"request-promise-native": "1.0.8",
-		"ws": "7.2.1",
-		"yargs": "15.1.0"
+		"ws": "7.3.0",
+		"yargs": "15.3.1"
 	},
 	"keywords": [
 		"http",

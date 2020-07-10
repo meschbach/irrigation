@@ -36,37 +36,41 @@ class DeltaIngress {
 	}
 
 	//TODO: Requested and upgrade shouldn't duplicate code
-	requested( request, response ){
-		//TODO: Tracing
-		// const monitor = this.mesh.metrics.measure("ingress");
+	requested( request, response, requestContext ){
 		//TODO: This structure can be improved for performance
 		const targetPoolName = runRules( this.targetPoolRules, this.defaultPool, request );
+		requestContext.opentracing.span.log({
+			event:"routing rules evaluated",
+			defaultPool: this.defaultPool,
+			ruleCount: this.targetPoolRules.length,
+			host: request.headers.host,
+			url: request.uri
+		});
+		requestContext.opentracing.span.setTag("targetPool.name", targetPoolName);
 		this.logger.debug("Target pool name: ", targetPoolName);
 
 		const targetPool = this.mesh.targetPools[targetPoolName] || {};
-		this.logger.debug("Pool: ", targetPool);
 		const targets = targetPool.targets || {};
 
 		if( targets.length == 0 ){
+			requestContext.opentracing.span.log({event:"No targets in pool", targetPoolName, targetPool});
 			this.logger.warn( "No targets found.", {targetPoolName} );
 			response.statusCode = 503;
 			response.setHeader("Content-Type","text/plain");
 			response.end("No targets found.");
-			// monitor.done();
 		} else {
 			const lb = targetPool.loadBalancer;
 			if( !lb || lb.isEmpty) {
+				requestContext.opentracing.span.log({event:"Missing load balancer data structure"});
 				response.statusCode = 503;
 				response.end("No targets in the pool " + targetPoolName);
-				// monitor.done();
 				return;
 			}
 
 			const targetName = targetPool.loadBalancer.next();
 			const target = targets[targetName];
-			assert(target);
-			// monitor.done();
-			this.wire_proxy.proxy( target, request, response )
+			requestContext.opentracing.span.log({event:"Dispatching to target", targetName});
+			this.wire_proxy.proxy( target, request, response, requestContext )
 		}
 	}
 

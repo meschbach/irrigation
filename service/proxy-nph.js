@@ -1,3 +1,4 @@
+const {traceError} = require("../junk");
 
 /*
  * Node HTTP Proxy
@@ -26,14 +27,18 @@ class NHPWireProxy {
 		this.wire = proxy
 	}
 
-	proxy( target, request, response ){
+	proxy( target, request, response, requestContext ){
 		this.logger.debug("Proxying ", target);
-		this.wire.web( request, response, { target: target.url }, (e) =>{
+		requestContext.opentracing.span.log({event:"dispatching via proxy-http",url: target.url});
+		this.wire.web( request, response, { target: target.url }, (e) => {
+			traceError(requestContext, e);
 			this.logger.warn("Encountered error while proxying", e);
-			if( !response.headersSent ){
+			if (!response.headersSent) {
+				requestContext.opentracing.span.log({"event": "sending status code"});
 				response.statusCode = 502;
 			}
-			if( !response.finished ){
+			if (!response.finished) {
+				requestContext.opentracing.span.log({"event": "unfinished response"});
 				response.end();
 			}
 		});

@@ -101,6 +101,18 @@ function newMetricsPlatform(){
 }
 
 /***********************************************************************************************************************
+ * OpenTracing
+ **********************************************************************************************************************/
+
+function traceError(context, err, details = {}){
+	const span = context.opentracing.span;
+	span.setTag("error",true);
+	span.log({'event': 'error', 'error.object': err, 'message': err.message, 'stack': err.stack});
+	Object.keys(details).forEach((k) => span.setTag(k,details[k]));
+}
+
+
+/***********************************************************************************************************************
  * Exports
  **********************************************************************************************************************/
 module.exports = {
@@ -111,5 +123,7 @@ module.exports = {
 	startMetric,
 	promiseMetric,
 	MetricsPlatform,
-	newMetricsPlatform
+	newMetricsPlatform,
+
+	traceError
 };

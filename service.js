@@ -26,6 +26,8 @@ if( args.ttl ) {
 }
 
 const {initTracerFromEnv} = require('jaeger-client');
+const {tracingInit} = require("junk-bucket/opentracing");
+
 async function setupTracer(context){
 	const config = {
 		serviceName: process.env.JAEGER_SERVICE_NAME || context.name
@@ -35,7 +37,7 @@ async function setupTracer(context){
 	};
 
 	const tracer = initTracerFromEnv(config, options);
-	context.tracer = tracer;
+	tracingInit(tracer,context);
 	return tracer;
 }
 
@@ -44,6 +46,11 @@ service( name, {
 	launch: async (logger) => {
 		const context = new Context(name, logger);
 		await setupTracer(context);
+		if( process.env.NODE_ENV === "production" ){
+			process.on("uncaughtException", (e) => {
+				logger.error("Uncaught exception.  The application will recover, however it should be restarted.", e);
+			});
+		}
 
 		const core = new delta.Delta( logger, context );
 		const url = await core.start(  args["control-http-port"], args["control-http-ip"] );

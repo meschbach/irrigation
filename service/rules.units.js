@@ -139,4 +139,31 @@ describe("rule compilation", function(){
 			});
 		});
 	});
+
+	describe('integration of rules', function () {
+		describe('host and host header', function () {
+			it('resolves the last item', function () {
+				const host = "example.domain.test";
+				const examplePrefix = "/.well-known/acme-challenge";
+				const hostOnlyTarget = "host:target", hostPrefixTarget = "host.path-prefix:target";
+				const compiledRules = compileRules([{
+					type: "header.host",
+					host,
+					target: hostOnlyTarget
+				},{
+					type: "host.path-prefix",
+					host,
+					prefix: examplePrefix,
+					target: hostPrefixTarget
+				}]);
+				const defaultTarget = "default-target"
+				const target = runRules( compiledRules, defaultTarget, {
+					headers: { "host" : host},
+					url: examplePrefix + "/8jCqoISfCfW7K3kJc_vHbuzq_VvZnwqvoI_FfDF-k5M"
+				});
+
+				expect(target).to.eq(hostPrefixTarget);
+			});
+		});
+	});
 });

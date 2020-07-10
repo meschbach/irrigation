@@ -16,6 +16,8 @@ const { MemoryCertificateManager } = require( './certificate-manager' );
 const {DeltaIngress} = require("./service/ingress");
 
 const {addressOnListen} = require("junk-bucket/sockets");
+const {FORMAT_HTTP_HEADERS} = require("opentracing");
+
 async function http_promise_listen_url( service, port, logger, protocol = "http" ){
 	assert(service);
 	const bindHost = '0.0.0.0';
@@ -42,6 +44,8 @@ async function http_promise_listen_url( service, port, logger, protocol = "http"
 const assert = require("assert");
 const {HandRolledProxierProducer} = require("./service/proxy-hand-rolled");
 const {NHPFactory} = require("./service/proxy-nph");
+const {traceRoot} = require("junk-bucket/opentracing");
+const {traceError} = require("./junk");
 
 /*
  * Top level proxy system state manager
@@ -97,10 +101,23 @@ class Delta {
 	 * Establish a service to handle incoming requests
 	 */
 	ingress( name, port, wire_proxy_name ) {
+		const traceName = "ingress:"+name;
 		let server = new http.Server( ( request, response ) => {
+			const requestContext = this.context.subcontext(name);
+			traceRoot(requestContext,traceName);
+			requestContext.opentracing.tracer.inject(requestContext.opentracing.span,FORMAT_HTTP_HEADERS, request.headers);
+			response.on("close", () => {
+				requestContext.opentracing.span.log({event: "response.close"});
+				requestContext.cleanup()
+			});
+			response.on("finish", () => {
+				requestContext.opentracing.span.log({event: "response.finish"});
+			});
 			try {
-				ingress.requested(request, response)
+				ingress.requested(request, response, requestContext)
 			} catch(e) {
+				traceError(requestContext, err);
+
 				this.logger.error("Failed to dispatch request", e);
 				response.statusCode = 543;
 				response.statusMessage = "Internal proxy error";
@@ -128,6 +145,8 @@ class Delta {
 	}
 
 	async secureIngress( name, port, wire_proxy_name, certificateName ) {
+		const traceName = "secure-ingress:"+name;
+
 		if( !certificateName ) { throw new Error("TLS requires a certificate"); }
 		const socketOptions = await this.certificateManager.retrieve(certificateName);
 		if( !socketOptions ){
@@ -144,9 +163,22 @@ class Delta {
 		};
 
 		const server = new https.createServer( options, ( request, response ) => {
+			const requestContext = this.context.subcontext(name);
+			traceRoot(requestContext,traceName);
+			requestContext.opentracing.tracer.inject(requestContext.opentracing.span,FORMAT_HTTP_HEADERS, request.headers);
+			response.on("close", () => {
+				requestContext.opentracing.span.log({event: "response.close"});
+				requestContext.cleanup()
+			});
+			response.on("finish", () => {
+				requestContext.opentracing.span.log({event: "response.finish"});
+			});
+
 			try {
-				ingress.requested(request, response)
+				ingress.requested(request, response, requestContext);
 			} catch(e) {
+				traceError(requestContext, err);
+
 				this.logger.error("Failed to dispatch request", e);
 				response.statusCode = 543;
 				response.statusMessage = "Internal proxy error";
