@@ -1,6 +1,5 @@
 node_modules
 *.sw[op]
 .idea/
-package-lock.json
 .nyc_output/
 coverage
