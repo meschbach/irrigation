@@ -12,30 +12,30 @@
 		"coveralls": "nyc report --reporter=text-lcov | coveralls"
 	},
 	"devDependencies": {
-		"chai": "4.2.0",
+		"chai": "4.3.0",
 		"chai-as-promised": "7.1.1",
 		"coveralls": "3.1.0",
-		"mocha": "8.0.1",
+		"mocha": "8.3.0",
 		"nyc": "15.1.0",
-		"selfsigned": "1.10.7"
+		"selfsigned": "1.10.8"
 	},
 	"dependencies": {
 		"body-parser": "1.19.0",
-		"bunyan": "1.8.14",
+		"bunyan": "1.8.15",
 		"bunyan-format": "0.2.1",
 		"express": "4.17.1",
 		"express-opentracing": "git+https://github.com/meschbach/javascript-express.git#production",
 		"http-proxy": "1.18.1",
-		"jaeger-client": "3.18.0",
+		"jaeger-client": "3.18.1",
 		"jsonwebtoken": "8.5.1",
 		"junk-bucket": "1.6.0",
 		"morgan": "1.10.0",
-		"opentracing": "^0.14.4",
-		"prom-client": "12.0.0",
+		"opentracing": "0.14.5",
+		"prom-client": "13.1.0",
 		"request": "2.88.2",
-		"request-promise-native": "1.0.8",
-		"ws": "7.3.1",
-		"yargs": "15.4.1"
+		"request-promise-native": "1.0.9",
+		"ws": "7.4.3",
+		"yargs": "16.2.0"
 	},
 	"keywords": [
 		"http",
