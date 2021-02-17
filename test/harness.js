@@ -8,16 +8,36 @@ const {defaultNullLogger} = require( "../junk" ); //junk-bucket/logging}
 const {Context} = require("junk-bucket/context");
 const express = require("express");
 
+const {initTracerFromEnv} = require('jaeger-client');
+const {tracingInit} = require("junk-bucket/opentracing");
+function setupTracer(context){
+	const config = {
+		serviceName: process.env.JAEGER_SERVICE_NAME || context.name
+	};
+	const options = {
+		logger: context.logger
+	};
+
+	const tracer = initTracerFromEnv(config, options);
+	tracingInit(tracer,context);
+	return tracer;
+}
+
 class Irrigation extends EventEmitter {
 	constructor( logger = defaultNullLogger ){
 		super();
 		this.logger = logger;
 		const context = new Context("irrigation", logger);
+		setupTracer(context);
 		this.proxy = new Delta( logger, context );
+		this.context = context;
 	}
 
 	async start(){
-		this.on("stop", () => { this.proxy.stop(); });
+		this.on("stop", () => {
+			this.proxy.stop();
+			this.context.cleanup();
+		});
 		this.localControlURL = await this.proxy.start();
 	}
 
