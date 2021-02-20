@@ -45,7 +45,7 @@ const assert = require("assert");
 const {HandRolledProxierProducer} = require("./service/proxy-hand-rolled");
 const {NHPFactory} = require("./service/proxy-nph");
 const {traceRoot} = require("junk-bucket/opentracing");
-const {traceError} = require("./junk");
+const {assertContextTracer, traceError} = require("./junk");
 
 /*
  * Top level proxy system state manager
@@ -54,7 +54,7 @@ class Delta {
 	constructor( logger, context ) {
 		assert(logger);
 		assert(context);
-		assert(context.cleanup);
+		assertContextTracer(context);
 
 		this.logger = logger;
 		this.context = context;
@@ -82,7 +82,7 @@ class Delta {
 		this.logger.info( "Starting new HTTP service", {port,iface} );
 
 		const controlLogger = this.logger.child({component: "http-api", port, iface});
-		let controller = new ExpressControlInterface( this, controlLogger , this.context.tracer );
+		let controller = new ExpressControlInterface( this, controlLogger , this.context.opentracing.tracer );
 		this.controlInterface = controller;
 		return controller.start( port, iface )
 	}

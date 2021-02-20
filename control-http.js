@@ -29,6 +29,7 @@ const {createIngress, ingressList} = require("./service/control-plane/http-v1");
  */
 class ExpressControlInterface {
 	constructor( delta, logger, tracer ) {
+		assert(tracer);
 		this.logger = logger;
 
 		this.delta = delta;
@@ -48,6 +49,11 @@ class ExpressControlInterface {
 			next();
 		});
 		service.use( expressOpenTracing({tracer: this.tracer}) );
+		service.use((req,resp, next) => {
+			const {span} = req;
+			span.setTag("component", "irrigation.control-plane")
+			next();
+		});
 		service.use( morgan( 'short', {
 			stream: {write: (msg) => {
 				this.logger.info(msg.trim());

@@ -16,7 +16,7 @@ const {addressOnListen} = require("junk-bucket/sockets");
 const assert = require("assert");
 const selfsigned = require("selfsigned");
 
-describe( "When configuring an ingress for websockets", function() {
+xdescribe( "When configuring an ingress for websockets", function() {
 	beforeEach(async function(){
 		const service = new WebSocket.Server({port:0});
 		this.targetMessage = new Future();

@@ -111,11 +111,17 @@ function traceError(context, err, details = {}){
 	Object.keys(details).forEach((k) => span.setTag(k,details[k]));
 }
 
+function assertContextTracer(ctx) {
+	assert( ctx.opentracing );
+	assert( ctx.opentracing.tracer );
+}
 
 /***********************************************************************************************************************
  * Exports
  **********************************************************************************************************************/
 module.exports = {
+	assertContextTracer,
+
 	listen,
 	defaultNullLogger,
 	testLogger,
