@@ -22,6 +22,8 @@ const jwt = require("jsonwebtoken");
 const {RoundRobinScheduler} = require("./service/round-robin");
 const {compileRules} = require("./service/rules");
 
+const {createIngress, ingressList} = require("./service/control-plane/http-v1");
+
 /*
  * Control Plane
  */
@@ -41,6 +43,10 @@ class ExpressControlInterface {
 		if( this.is_running() ) { return this.start_promise; }
 
 		let service = make_async( express() );
+		service.use((req,resp,next) => {
+			req.irrigation = this;
+			next();
+		});
 		service.use( expressOpenTracing({tracer: this.tracer}) );
 		service.use( morgan( 'short', {
 			stream: {write: (msg) => {
@@ -56,62 +62,8 @@ class ExpressControlInterface {
 		});
 		service.use( bodyParser.json() );
 
-		service.a_get( '/v1/ingress', async ( req, resp ) => {
-			let ingress_points = await this.delta.list_ingress();
-			resp.json({ ingress: ingress_points })
-		})
-
-		service.a_post( '/v1/ingress', async ( req, resp ) => {
-			// Validate message
-			const body = req.body;
-			let port = body.port || 0;
-			let wire_proxy = body.wire_proxy || "hand";
-			let wait = body.wait || true;
-			let name = body.name || "default";
-			const scheme = body.scheme || "http";
-			const certificateName = body.certificateName;
-
-			if( port == 0 && !wait ){
-				resp.statusCode = 422;
-				return resp.json( { errors: ["Must wait on unspecified ports"] } )
-			}
-			if( !["http", "https"].includes(scheme) ){
-				resp.statusCode = 422;
-				return resp.json( { errors: {scheme: ["must be either http or https"]}} );
-			}
-			if( scheme == "https" && !certificateName ) {
-				resp.statusCode = 422;
-				return resp.json( { errors: {certificateName: ["Must be defined"]}} );
-			}
-
-			if( this.delta.ingress_controllers[name] ){
-				resp.statusCode = 409;
-				return resp.json( { errors: ["Ingress by that name already exists"] } );
-			}
-			this.logger.info("Validated request; looks reasonable",{wait});
-
-			// Perform operation
-			try {
-				let ingress;
-				this.logger.info("Creating ingress with target scheme ", {scheme, body: req.body});
-				if (scheme == "https") {
-					this.logger.info("Certificate name ", certificateName);
-					ingress = await this.delta.secureIngress(name, port, wire_proxy, certificateName)
-				} else {
-					ingress = await this.delta.ingress(name, port, wire_proxy)
-				}
-				let completion = wait ? ingress.listening : Promise.resolve(port);
-				const boundPort = await completion;
-
-				resp.statusCode = 201;
-				//let scheme = req.get( "scheme" )
-				resp.json({_self: "http://" + req.get("host") + "/v1/ingress/" + name})
-			}catch(problem){
-				this.logger.error("Failed to bind to port", problem);
-				resp.statusCode = 409;
-				resp.json({ok:false, problem: problem.message});
-			}
-		});
+		service.a_get( '/v1/ingress', ingressList)
+		service.a_post( '/v1/ingress', createIngress);
 
 		service.get( '/v1/ingress/:name', ( req, resp ) => {
 			let name = req.params.name;
