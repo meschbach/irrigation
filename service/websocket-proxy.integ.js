@@ -2,8 +2,7 @@ const chai = require( 'chai' );
 const expect = chai.expect;
 
 const WebSocket = require('ws');
-const DeltaClient = require("../client");
-let delta = require( "../index" );
+const {Irrigation} = require("../test/harness");
 
 const {Context} = require("junk-bucket/context");
 const {promiseEvent} = require("junk-bucket/future");
@@ -16,7 +15,7 @@ const {addressOnListen} = require("junk-bucket/sockets");
 const assert = require("assert");
 const selfsigned = require("selfsigned");
 
-xdescribe( "When configuring an ingress for websockets", function() {
+describe( "When configuring an ingress for websockets", function() {
 	beforeEach(async function(){
 		const service = new WebSocket.Server({port:0});
 		this.targetMessage = new Future();
@@ -38,10 +37,10 @@ xdescribe( "When configuring an ingress for websockets", function() {
 		//TODO: Use Irrigation facade
 		const logger = createTestLogger("websocket-proxy", false);
 		const context = new Context("websocket-proxy", logger);
-		this.proxy = new delta.Delta( logger, context );
+		this.proxy = new Irrigation();
+		await this.proxy.start();
 
-		this.proxyControl = await this.proxy.start();
-		this.client = new DeltaClient( this.proxyControl );
+		this.client = this.proxy.client();
 		await this.client.createTargetPool("ws-pool");
 		await this.client.registerTarget("ws-pool", "ws-target", "http://localhost:"+ this.targetPort);
 		//TODO: Shoudl probably bind to a service which rasises an error
