@@ -27,7 +27,7 @@
 		"express-opentracing": "git+https://github.com/meschbach/javascript-express.git#production",
 		"http-proxy": "1.18.1",
 		"jaeger-client": "3.18.1",
-		"jsonwebtoken": "8.5.1",
+		"jsonwebtoken": "9.0.0",
 		"junk-bucket": "1.6.0",
 		"morgan": "1.10.0",
 		"opentracing": "0.14.5",
